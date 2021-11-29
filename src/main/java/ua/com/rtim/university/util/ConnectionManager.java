@@ -11,7 +11,11 @@ import java.util.Properties;
 
 public class ConnectionManager {
 
-	public Connection getConnection() throws SQLException {
+	private final String url;
+	private final String userName;
+	private final String password;
+
+	public ConnectionManager() {
 		Properties properties = new Properties();
 		try {
 			URL fileUrl = getClass().getClassLoader().getResource("db.properties");
@@ -24,9 +28,12 @@ public class ConnectionManager {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		String dbConnUrl = properties.getProperty("db.conn.url");
-		String dbUserName = properties.getProperty("db.username");
-		String dbPassword = properties.getProperty("db.password");
-		return DriverManager.getConnection(dbConnUrl, dbUserName, dbPassword);
+		this.url = properties.getProperty("db.conn.url");
+		this.userName = properties.getProperty("db.username");
+		this.password = properties.getProperty("db.password");
+	}
+
+	public Connection getConnection() throws SQLException {
+		return DriverManager.getConnection(url, userName, password);
 	}
 }

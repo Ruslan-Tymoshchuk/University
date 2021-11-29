@@ -6,18 +6,18 @@ import java.util.Set;
 
 public class Student {
 
-	private int studentId;
+	private int id;
 	private Group group;
 	private String firstName;
 	private String lastName;
 	private Set<Course> courses = new HashSet<>();
 
-	public int getStudentId() {
-		return studentId;
+	public int getId() {
+		return id;
 	}
 
-	public void setStudentId(int studentId) {
-		this.studentId = studentId;
+	public void setId(int id) {
+		this.id = id;
 	}
 
 	public Group getGroup() {
@@ -54,7 +54,7 @@ public class Student {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(firstName, group, lastName, studentId);
+		return Objects.hash(firstName, group, lastName, id);
 	}
 
 	@Override
@@ -67,6 +67,6 @@ public class Student {
 			return false;
 		Student other = (Student) obj;
 		return Objects.equals(firstName, other.firstName) && Objects.equals(group, other.group)
-				&& Objects.equals(lastName, other.lastName) && studentId == other.studentId;
+				&& Objects.equals(lastName, other.lastName) && id == other.id;
 	}
 }

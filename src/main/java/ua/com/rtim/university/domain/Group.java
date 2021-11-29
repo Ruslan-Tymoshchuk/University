@@ -4,28 +4,28 @@ import java.util.Objects;
 
 public class Group {
 
-	private int groupId;
-	private String groupName;
+	private int id;
+	private String name;
 
-	public int getGroupId() {
-		return groupId;
+	public int getId() {
+		return id;
 	}
 
-	public void setGroupId(int groupId) {
-		this.groupId = groupId;
+	public void setId(int id) {
+		this.id = id;
 	}
 
-	public String getGroupName() {
-		return groupName;
+	public String getName() {
+		return name;
 	}
 
-	public void setGroupName(String groupName) {
-		this.groupName = groupName;
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(groupId, groupName);
+		return Objects.hash(id, name);
 	}
 
 	@Override
@@ -37,6 +37,6 @@ public class Group {
 		if (getClass() != obj.getClass())
 			return false;
 		Group other = (Group) obj;
-		return groupId == other.groupId && Objects.equals(groupName, other.groupName);
+		return id == other.id && Objects.equals(name, other.name);
 	}
 }

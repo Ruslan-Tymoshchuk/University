@@ -4,27 +4,27 @@ import java.util.Objects;
 
 public class Course {
 
-	private int courseId;
-	private String courseName;
-	private String description = "The best science";
+	private int id;
+	private String name;
+	private String description;
 
-	public int getCourseId() {
-		return courseId;
+	public int getId() {
+		return id;
 	}
 
-	public void setCourseId(int courseId) {
-		this.courseId = courseId;
+	public void setId(int id) {
+		this.id = id;
 	}
 
-	public String getCourseName() {
-		return courseName;
+	public String getName() {
+		return name;
 	}
 
-	public void setCourseName(String courseName) {
-		this.courseName = courseName;
+	public void setName(String name) {
+		this.name = name;
 	}
 
-	public String getCourseDescription() {
+	public String getDescription() {
 		return description;
 	}
 
@@ -34,7 +34,7 @@ public class Course {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(courseId, courseName, description);
+		return Objects.hash(id, name, description);
 	}
 
 	@Override
@@ -46,7 +46,6 @@ public class Course {
 		if (getClass() != obj.getClass())
 			return false;
 		Course other = (Course) obj;
-		return courseId == other.courseId && Objects.equals(courseName, other.courseName)
-				&& Objects.equals(description, other.description);
+		return id == other.id && Objects.equals(name, other.name) && Objects.equals(description, other.description);
 	}
 }

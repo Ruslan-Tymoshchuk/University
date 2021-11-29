@@ -3,86 +3,151 @@ package ua.com.rtim.university.dao;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.dbunit.Assertion;
+import org.dbunit.database.DatabaseConnection;
+import org.dbunit.database.IDatabaseConnection;
+import org.dbunit.dataset.IDataSet;
+import org.dbunit.dataset.ITable;
+import org.dbunit.operation.DatabaseOperation;
 import org.junit.jupiter.api.Test;
 
 import ua.com.rtim.university.domain.Course;
-import ua.com.rtim.university.util.ScriptRunner;
 
-class CourseDaoTest {
+class CourseDaoTest extends DaoTest {
 
-	private CourseDao courseDao = new CourseDao();
-	private ScriptRunner scriptRunner = new ScriptRunner();
-
-	@BeforeEach
-	void generateTestData_beforeEachTest_thenTheTestResult() {
-		scriptRunner.generateDatabaseData("tables.sql");
-		scriptRunner.generateDatabaseData("coursedata.sql");
+	@Test
+	void findAll_shouldBeGetAllEntities_fromTheDataBase() throws Exception {
+		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
+		try {
+			scriptRunner.generateDatabaseData("tables.sql");
+			IDataSet dataSet = getDataSet("actualdata.xml");
+			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+			List<Course> courses = courseDao.findAll();
+			IDataSet databaseDataSet = connection.createDataSet();
+			ITable actualTable = databaseDataSet.getTable("COURSES");
+			connection.close();
+			ITable expectedTable = getDataSet("actualdata.xml").getTable("COURSES");
+			Assertion.assertEquals(expectedTable, actualTable);
+			assertEquals(expectedTable.getRowCount(), courses.size());
+		} finally {
+			connection.close();
+		}
 	}
 
 	@Test
-	void findAll_shouldBeGetAllEntities_fromTheDataBase() {
-		List<Course> expected = new ArrayList<>();
-		Course course1 = new Course();
-		course1.setCourseId(1);
-		course1.setCourseName("PHYSICS");
-		course1.setDescription("The best science");
-		expected.add(course1);
-		Course course2 = new Course();
-		course2.setCourseId(2);
-		course2.setCourseName("HYSTORY");
-		course2.setDescription("The best science");
-		expected.add(course2);
-		Course course3 = new Course();
-		course3.setCourseId(3);
-		course3.setCourseName("ENGLISH");
-		course3.setDescription("The best science");
-		expected.add(course3);
-		assertEquals(expected, courseDao.findAll());
+	void create_shouldBeAddNewEntity_intoTheDataBase() throws Exception {
+		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
+		try {
+			scriptRunner.generateDatabaseData("tables.sql");
+			IDataSet dataSet = getDataSet("actualdata.xml");
+			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+			Course course = new Course();
+			course.setId(4);
+			course.setName("TestCourse");
+			course.setDescription("The best science");
+			courseDao.create(course);
+			ITable expectedTable = getDataSet("expected-create.xml").getTable("COURSES");
+			IDataSet databaseDataSet = connection.createDataSet();
+			ITable actualTable = databaseDataSet.getTable("COURSES");
+			connection.close();
+			Assertion.assertEquals(expectedTable, actualTable);
+		} finally {
+			connection.close();
+		}
 	}
 
 	@Test
-	void create_shouldBeAddNewEntity_intoTheDataBase() {
-		Course expected = new Course();
-		expected.setCourseId(4);
-		expected.setCourseName("TestCourse");
-		expected.setDescription("The best science");
-		courseDao.create(expected);
-		Course actual = courseDao.getById(4);
-		assertEquals(expected, actual);
+	void update_shouldBeUpdateEntity_inTheDataBase() throws Exception {
+		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
+		try {
+			scriptRunner.generateDatabaseData("tables.sql");
+			IDataSet dataSet = getDataSet("actualdata.xml");
+			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+			Course course = courseDao.getById(3);
+			course.setName("TestName");
+			course.setDescription("TestDescription");
+			courseDao.update(course);
+			ITable expectedTable = getDataSet("expected-update.xml").getTable("COURSES");
+			IDataSet databaseDataSet = connection.createDataSet();
+			ITable actualTable = databaseDataSet.getTable("COURSES");
+			connection.close();
+			Assertion.assertEquals(expectedTable, actualTable);
+		} finally {
+			connection.close();
+		}
 	}
 
 	@Test
-	void update_shouldBeUpdateEntity_inTheDataBase() {
-		Course expected = courseDao.getById(1);
-		expected.setCourseName("TestName");
-		expected.setDescription("TestDescription");
-		courseDao.update(expected);
-		assertEquals(expected, courseDao.getById(1));
+	void delete_shouldBeRemoveEntity_fromTheDataBase() throws Exception {
+		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
+		try {
+			scriptRunner.generateDatabaseData("tables.sql");
+			IDataSet dataSet = getDataSet("actualdata.xml");
+			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+			courseDao.delete(courseDao.getById(3));
+			ITable expectedTable = getDataSet("expected-delete.xml").getTable("COURSES");
+			IDataSet databaseDataSet = connection.createDataSet();
+			ITable actualTable = databaseDataSet.getTable("COURSES");
+			connection.close();
+			Assertion.assertEquals(expectedTable, actualTable);
+		} finally {
+			connection.close();
+		}
 	}
 
 	@Test
-	void delete_shouldBeRemoveEntity_fromTheDataBase() {
-		courseDao.delete(courseDao.getById(1));
-		Course expected = new Course();
-		assertEquals(expected, courseDao.getById(1));
+	void givenNull_whenCreateCourse_thenException() throws Exception {
+		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
+		try {
+			scriptRunner.generateDatabaseData("tables.sql");
+			IDataSet dataSet = getDataSet("actualdata.xml");
+			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+			assertThrows(NullPointerException.class, () -> courseDao.create(null));
+			ITable expectedTable = getDataSet("actualdata.xml").getTable("COURSES");
+			IDataSet databaseDataSet = connection.createDataSet();
+			ITable actualTable = databaseDataSet.getTable("COURSES");
+			connection.close();
+			Assertion.assertEquals(expectedTable, actualTable);
+		} finally {
+			connection.close();
+		}
 	}
 
 	@Test
-	void givenNull_whenCreateCourse_thenException() {
-		assertThrows(NullPointerException.class, () -> courseDao.create(null));
+	void givenNull_whenUpdateCourse_thenException() throws Exception {
+		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
+		try {
+			scriptRunner.generateDatabaseData("tables.sql");
+			IDataSet dataSet = getDataSet("actualdata.xml");
+			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+			assertThrows(NullPointerException.class, () -> courseDao.update(null));
+			ITable expectedTable = getDataSet("actualdata.xml").getTable("COURSES");
+			IDataSet databaseDataSet = connection.createDataSet();
+			ITable actualTable = databaseDataSet.getTable("COURSES");
+			connection.close();
+			Assertion.assertEquals(expectedTable, actualTable);
+		} finally {
+			connection.close();
+		}
 	}
 
 	@Test
-	void givenNull_whenUpdateCourse_thenException() {
-		assertThrows(NullPointerException.class, () -> courseDao.update(null));
-	}
-
-	@Test
-	void givenNull_whenDeleteCourse_thenException() {
-		assertThrows(NullPointerException.class, () -> courseDao.delete(null));
+	void givenNull_whenDeleteCourse_thenException() throws Exception {
+		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
+		try {
+			scriptRunner.generateDatabaseData("tables.sql");
+			IDataSet dataSet = getDataSet("actualdata.xml");
+			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+			assertThrows(NullPointerException.class, () -> courseDao.delete(null));
+			ITable expectedTable = getDataSet("actualdata.xml").getTable("COURSES");
+			IDataSet databaseDataSet = connection.createDataSet();
+			ITable actualTable = databaseDataSet.getTable("COURSES");
+			connection.close();
+			Assertion.assertEquals(expectedTable, actualTable);
+		} finally {
+			connection.close();
+		}
 	}
 }

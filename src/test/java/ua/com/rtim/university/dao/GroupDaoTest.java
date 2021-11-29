@@ -3,82 +3,149 @@ package ua.com.rtim.university.dao;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.dbunit.Assertion;
+import org.dbunit.database.DatabaseConnection;
+import org.dbunit.database.IDatabaseConnection;
+import org.dbunit.dataset.IDataSet;
+import org.dbunit.dataset.ITable;
+import org.dbunit.operation.DatabaseOperation;
 import org.junit.jupiter.api.Test;
 
 import ua.com.rtim.university.domain.Group;
-import ua.com.rtim.university.util.ScriptRunner;
 
-class GroupDaoTest {
+class GroupDaoTest extends DaoTest {
 
-	private GroupDao groupDao = new GroupDao();
-	private ScriptRunner scriptRunner = new ScriptRunner();
-
-	@BeforeEach
-	void generateTestData_beforeEachTest_thenTheTestResult() {
-		scriptRunner.generateDatabaseData("tables.sql");
-		scriptRunner.generateDatabaseData("groupdata.sql");
+	@Test
+	void findAll_shouldBeGetAllEntities_fromTheDataBase() throws Exception {
+		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
+		try {
+			scriptRunner.generateDatabaseData("tables.sql");
+			IDataSet dataSet = getDataSet("actualdata.xml");
+			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+			List<Group> groups = groupDao.findAll();
+			IDataSet databaseDataSet = connection.createDataSet();
+			ITable actualTable = databaseDataSet.getTable("GROUPS");
+			connection.close();
+			ITable expectedTable = getDataSet("actualdata.xml").getTable("GROUPS");
+			Assertion.assertEquals(expectedTable, actualTable);
+			assertEquals(expectedTable.getRowCount(), groups.size());
+		} finally {
+			connection.close();
+		}
 	}
 
 	@Test
-	void findAll_shouldBeGetAllEntities_fromTheDataBase() {
-		List<Group> expected = new ArrayList<>();
-		Group group1 = new Group();
-		group1.setGroupId(1);
-		group1.setGroupName("HJ-23");
-		expected.add(group1);
-		Group group2 = new Group();
-		group2.setGroupId(2);
-		group2.setGroupName("KM-15");
-		expected.add(group2);
-		Group group3 = new Group();
-		group3.setGroupId(3);
-		group3.setGroupName("BG-43");
-		expected.add(group3);
-		List<Group> gr = groupDao.findAll();
-		assertEquals(expected, gr);
+	void create_shouldBeAddNewEntity_intoTheDataBase() throws Exception {
+		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
+		try {
+			scriptRunner.generateDatabaseData("tables.sql");
+			IDataSet dataSet = getDataSet("actualdata.xml");
+			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+			Group group = new Group();
+			group.setId(4);
+			group.setName("HK-23");
+			groupDao.create(group);
+			ITable expectedTable = getDataSet("expected-create.xml").getTable("GROUPS");
+			IDataSet databaseDataSet = connection.createDataSet();
+			ITable actualTable = databaseDataSet.getTable("GROUPS");
+			connection.close();
+			Assertion.assertEquals(expectedTable, actualTable);
+		} finally {
+			connection.close();
+		}
 	}
 
 	@Test
-	void create_shouldBeAddNewEntity_intoTheDataBase() {
-		Group expected = new Group();
-		expected.setGroupId(4);
-		expected.setGroupName("HK-23");
-		groupDao.create(expected);
-		Group actual = groupDao.getById(4);
-		assertEquals(expected, actual);
+	void update_shouldBeUpdateEntity_inTheDataBase() throws Exception {
+		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
+		try {
+			scriptRunner.generateDatabaseData("tables.sql");
+			IDataSet dataSet = getDataSet("actualdata.xml");
+			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+			Group group = groupDao.getById(3);
+			group.setName("HH-55");
+			groupDao.update(group);
+			ITable expectedTable = getDataSet("expected-update.xml").getTable("GROUPS");
+			IDataSet databaseDataSet = connection.createDataSet();
+			ITable actualTable = databaseDataSet.getTable("GROUPS");
+			connection.close();
+			Assertion.assertEquals(expectedTable, actualTable);
+		} finally {
+			connection.close();
+		}
 	}
 
 	@Test
-	void update_shouldBeUpdateEntity_inTheDataBase() {
-		Group expected = groupDao.getById(1);
-		expected.setGroupName("TestName");
-		groupDao.update(expected);
-		assertEquals(expected, groupDao.getById(1));
+	void delete_shouldBeRemoveEntity_fromTheDataBase() throws Exception {
+		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
+		try {
+			scriptRunner.generateDatabaseData("tables.sql");
+			IDataSet dataSet = getDataSet("actualdata.xml");
+			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+			groupDao.delete(groupDao.getById(3));
+			ITable expectedTable = getDataSet("expected-delete.xml").getTable("GROUPS");
+			IDataSet databaseDataSet = connection.createDataSet();
+			ITable actualTable = databaseDataSet.getTable("GROUPS");
+			connection.close();
+			Assertion.assertEquals(expectedTable, actualTable);
+		} finally {
+			connection.close();
+		}
 	}
 
 	@Test
-	void delete_shouldBeRemoveEntity_fromTheDataBase() {
-		groupDao.delete(groupDao.getById(1));
-		Group expected = new Group();
-		assertEquals(expected, groupDao.getById(1));
+	void givenNull_whenCreateGroup_thenException() throws Exception {
+		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
+		try {
+			scriptRunner.generateDatabaseData("tables.sql");
+			IDataSet dataSet = getDataSet("actualdata.xml");
+			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+			assertThrows(NullPointerException.class, () -> groupDao.create(null));
+			ITable expectedTable = getDataSet("actualdata.xml").getTable("GROUPS");
+			IDataSet databaseDataSet = connection.createDataSet();
+			ITable actualTable = databaseDataSet.getTable("GROUPS");
+			connection.close();
+			Assertion.assertEquals(expectedTable, actualTable);
+		} finally {
+			connection.close();
+		}
 	}
 
 	@Test
-	void givenNull_whenCreateGroup_thenException() {
-		assertThrows(NullPointerException.class, () -> groupDao.create(null));
+	void givenNull_whenUpdateGroup_thenException() throws Exception {
+		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
+		try {
+			scriptRunner.generateDatabaseData("tables.sql");
+			IDataSet dataSet = getDataSet("actualdata.xml");
+			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+			assertThrows(NullPointerException.class, () -> groupDao.update(null));
+			ITable expectedTable = getDataSet("actualdata.xml").getTable("GROUPS");
+			IDataSet databaseDataSet = connection.createDataSet();
+			ITable actualTable = databaseDataSet.getTable("GROUPS");
+			connection.close();
+			Assertion.assertEquals(expectedTable, actualTable);
+		} finally {
+			connection.close();
+		}
 	}
 
 	@Test
-	void givenNull_whenUpdateGroup_thenException() {
-		assertThrows(NullPointerException.class, () -> groupDao.update(null));
-	}
-
-	@Test
-	void givenNull_whenDeleteGroup_thenException() {
-		assertThrows(NullPointerException.class, () -> groupDao.delete(null));
+	void givenNull_whenDeleteGroup_thenException() throws Exception {
+		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
+		try {
+			scriptRunner.generateDatabaseData("tables.sql");
+			IDataSet dataSet = getDataSet("actualdata.xml");
+			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+			assertThrows(NullPointerException.class, () -> groupDao.delete(null));
+			ITable expectedTable = getDataSet("actualdata.xml").getTable("GROUPS");
+			IDataSet databaseDataSet = connection.createDataSet();
+			ITable actualTable = databaseDataSet.getTable("GROUPS");
+			connection.close();
+			Assertion.assertEquals(expectedTable, actualTable);
+		} finally {
+			connection.close();
+		}
 	}
 }

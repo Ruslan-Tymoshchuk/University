@@ -32,7 +32,7 @@ public class DataGenerator {
 			String characters = randomAlphabetic(2).toUpperCase();
 			String numbers = randomNumeric(2);
 			Group group = new Group();
-			group.setGroupName(String.format("%s-%s", characters, numbers));
+			group.setName(String.format("%s-%s", characters, numbers));
 			groups.add(group);
 		});
 		return groups;
@@ -44,7 +44,7 @@ public class DataGenerator {
 		List<Course> courses = new ArrayList<>();
 		IntStream.range(0, coursesNames.size()).forEach(s -> {
 			Course course = new Course();
-			course.setCourseName(coursesNames.get(s));
+			course.setName(coursesNames.get(s));
 			courses.add(course);
 		});
 		return courses;
