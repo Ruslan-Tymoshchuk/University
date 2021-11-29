@@ -27,5 +27,3 @@ CREATE TABLE students_courses(
     PRIMARY KEY (student_id, course_id),
     UNIQUE (student_id, course_id)
 );
-
-
