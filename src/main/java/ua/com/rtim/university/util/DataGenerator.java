@@ -82,8 +82,11 @@ public class DataGenerator {
 	private List<Student> bindCourses(List<Student> allStudents, List<Course> courses) {
 		List<Student> students = new ArrayList<>();
 		allStudents.forEach(student -> {
-			IntStream.range(0, current().nextInt(1, 4))
-					.forEach(s -> student.setCourse(courses.get(current().nextInt(courses.size()))));
+			IntStream.range(0, current().nextInt(1, 4)).forEach(s -> {
+				Course course = courses.get(current().nextInt(courses.size()));
+				course.setStudent(student);
+				student.setCourse(course);
+			});
 			students.add(student);
 		});
 		return students;

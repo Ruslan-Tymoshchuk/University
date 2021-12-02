@@ -14,6 +14,7 @@ import org.dbunit.operation.DatabaseOperation;
 import org.junit.jupiter.api.Test;
 
 import ua.com.rtim.university.domain.Course;
+import ua.com.rtim.university.domain.Student;
 
 class CourseDaoTest extends DaoTest {
 
@@ -21,7 +22,7 @@ class CourseDaoTest extends DaoTest {
 	void findAll_shouldBeGetAllEntities_fromTheDataBase() throws Exception {
 		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
 		try {
-			scriptRunner.generateDatabaseData("tables.sql");
+			scriptRunner.generateDatabaseData("schema.sql");
 			IDataSet dataSet = getDataSet("actualdata.xml");
 			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
 			List<Course> courses = courseDao.findAll();
@@ -40,7 +41,7 @@ class CourseDaoTest extends DaoTest {
 	void create_shouldBeAddNewEntity_intoTheDataBase() throws Exception {
 		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
 		try {
-			scriptRunner.generateDatabaseData("tables.sql");
+			scriptRunner.generateDatabaseData("schema.sql");
 			IDataSet dataSet = getDataSet("actualdata.xml");
 			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
 			Course course = new Course();
@@ -59,20 +60,20 @@ class CourseDaoTest extends DaoTest {
 	}
 
 	@Test
-	void update_shouldBeUpdateEntity_inTheDataBase() throws Exception {
+	void shouldBeAdd_studentToCourse_inTheDataBase() throws Exception {
 		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
 		try {
-			scriptRunner.generateDatabaseData("tables.sql");
+			scriptRunner.generateDatabaseData("schema.sql");
 			IDataSet dataSet = getDataSet("actualdata.xml");
 			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
-			Course course = courseDao.getById(3);
-			course.setName("TestName");
-			course.setDescription("TestDescription");
+			Student student = studentDao.getById(1);
+			Course course = courseDao.getById(2);
+			course.setStudent(student);
 			courseDao.update(course);
-			ITable expectedTable = getDataSet("expected-update.xml").getTable("COURSES");
 			IDataSet databaseDataSet = connection.createDataSet();
-			ITable actualTable = databaseDataSet.getTable("COURSES");
+			ITable actualTable = databaseDataSet.getTable("STUDENTS_COURSES");
 			connection.close();
+			ITable expectedTable = getDataSet("expected-update.xml").getTable("STUDENTS_COURSES");
 			Assertion.assertEquals(expectedTable, actualTable);
 		} finally {
 			connection.close();
@@ -80,17 +81,20 @@ class CourseDaoTest extends DaoTest {
 	}
 
 	@Test
-	void delete_shouldBeRemoveEntity_fromTheDataBase() throws Exception {
+	void shouldBeRemove_studentFromCourse_inTheDataBase() throws Exception {
 		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
 		try {
-			scriptRunner.generateDatabaseData("tables.sql");
+			scriptRunner.generateDatabaseData("schema.sql");
 			IDataSet dataSet = getDataSet("actualdata.xml");
 			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
-			courseDao.delete(courseDao.getById(3));
-			ITable expectedTable = getDataSet("expected-delete.xml").getTable("COURSES");
+			Student student = studentDao.getById(1);
+			Course course = courseDao.getById(1);
+			course.setStudent(student);
+			courseDao.delete(course);
 			IDataSet databaseDataSet = connection.createDataSet();
-			ITable actualTable = databaseDataSet.getTable("COURSES");
+			ITable actualTable = databaseDataSet.getTable("STUDENTS_COURSES");
 			connection.close();
+			ITable expectedTable = getDataSet("expected-delete.xml").getTable("STUDENTS_COURSES");
 			Assertion.assertEquals(expectedTable, actualTable);
 		} finally {
 			connection.close();
@@ -101,7 +105,7 @@ class CourseDaoTest extends DaoTest {
 	void givenNull_whenCreateCourse_thenException() throws Exception {
 		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
 		try {
-			scriptRunner.generateDatabaseData("tables.sql");
+			scriptRunner.generateDatabaseData("schema.sql");
 			IDataSet dataSet = getDataSet("actualdata.xml");
 			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
 			assertThrows(NullPointerException.class, () -> courseDao.create(null));
@@ -119,7 +123,7 @@ class CourseDaoTest extends DaoTest {
 	void givenNull_whenUpdateCourse_thenException() throws Exception {
 		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
 		try {
-			scriptRunner.generateDatabaseData("tables.sql");
+			scriptRunner.generateDatabaseData("schema.sql");
 			IDataSet dataSet = getDataSet("actualdata.xml");
 			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
 			assertThrows(NullPointerException.class, () -> courseDao.update(null));
@@ -137,7 +141,7 @@ class CourseDaoTest extends DaoTest {
 	void givenNull_whenDeleteCourse_thenException() throws Exception {
 		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
 		try {
-			scriptRunner.generateDatabaseData("tables.sql");
+			scriptRunner.generateDatabaseData("schema.sql");
 			IDataSet dataSet = getDataSet("actualdata.xml");
 			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
 			assertThrows(NullPointerException.class, () -> courseDao.delete(null));

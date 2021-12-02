@@ -10,7 +10,6 @@ public class DaoTest {
 
 	protected ConnectionManager connectionManager = new ConnectionManager();
 	protected ScriptRunner scriptRunner = new ScriptRunner();
-	protected UniversityDao universityDao = new UniversityDao();
 	protected StudentDao studentDao = new StudentDao();
 	protected CourseDao courseDao = new CourseDao();
 	protected GroupDao groupDao = new GroupDao();

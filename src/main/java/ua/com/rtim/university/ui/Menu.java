@@ -4,13 +4,13 @@ import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 
+import org.apache.log4j.Logger;
+
 import ua.com.rtim.university.dao.CourseDao;
 import ua.com.rtim.university.dao.CrudRepository;
 import ua.com.rtim.university.dao.DaoException;
 import ua.com.rtim.university.dao.GroupDao;
 import ua.com.rtim.university.dao.StudentDao;
-import ua.com.rtim.university.dao.UniversityDao;
-import ua.com.rtim.university.dao.UniversityManager;
 import ua.com.rtim.university.domain.Course;
 import ua.com.rtim.university.domain.Group;
 import ua.com.rtim.university.domain.Student;
@@ -33,18 +33,18 @@ public class Menu implements UserMenu {
 	public static final String STUDENT_FORMAT = "Student: ID_%d %s %s";
 	public static final String GROUP_FORMAT = "Group: ID_%d %s";
 	public static final String COURSE_FORMAT = "Course: ID_%d %s";
-	private UniversityManager userOption = new UniversityDao();
 	private CrudRepository<Course> courseDao = new CourseDao();
 	private CrudRepository<Student> studentDao = new StudentDao();
 	private CrudRepository<Group> groupDao = new GroupDao();
-	private org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Menu.class);
+	private static Logger log = Logger.getLogger(Menu.class);
 
 	@Override
 	public void findAllGroupsByStudentsAmount(Scanner scanner) {
 		try {
 			log.info(UNSWER_MENU_ENTER_THE_NUMBER);
-			List<Group> groups = userOption.getGroupsByStudentAmount(scanner.nextInt());
-			groups.forEach(group -> log.info(group.getName()));
+			List<Group> groups = groupDao.findAll();
+			int amount = scanner.nextInt();
+			groups.stream().filter(group -> group.getAmount() >= amount).forEach(group -> log.info(group.getName()));
 		} catch (InputMismatchException | DaoException e) {
 			log.error(UNSWER_MENU_ENTER_THE_NUMBER + SPACE_DELIMITER + UNSWER_MENU_TO_MAIN_MENU, e);
 		}
@@ -56,7 +56,9 @@ public class Menu implements UserMenu {
 			List<Course> courses = courseDao.findAll();
 			courses.forEach(course -> log.info(String.format(COURSE_FORMAT, course.getId(), course.getName())));
 			log.info(UNSWER_MENU_COURSE_NAME);
-			List<Student> studentsByCourse = userOption.findAllStudentsByCourseName(scanner.nextLine());
+			String courseName = scanner.nextLine();
+			List<Student> studentsByCourse = courses.stream().filter(course -> course.getName().equals(courseName))
+					.findFirst().orElseThrow(InputMismatchException::new).getStudents();
 			if (!studentsByCourse.isEmpty()) {
 				studentsByCourse.forEach(student -> log.info(
 						String.format(STUDENT_FORMAT, student.getId(), student.getFirstName(), student.getLastName())));
@@ -118,7 +120,8 @@ public class Menu implements UserMenu {
 				log.info(UNSWER_MENU_ENTER_COURSE_ID);
 				Course course = courseDao.getById(scanner.nextInt());
 				if (course.getId() > 0 && !student.getCourses().contains(course)) {
-					userOption.addToCourse(student, course);
+					course.setStudent(student);
+					courseDao.update(course);
 					log.info("Ok, the student has been added to the course");
 				} else {
 					log.info(UNSWER_MENU_INCORRECT_COURSE_CELECTION + SPACE_DELIMITER + UNSWER_MENU_TO_MAIN_MENU);
@@ -141,7 +144,8 @@ public class Menu implements UserMenu {
 				log.info(UNSWER_MENU_ENTER_COURSE_ID);
 				Course course = courseDao.getById(scanner.nextInt());
 				if (student.getCourses().contains(course)) {
-					userOption.removeFromCourse(student, course);
+					course.setStudent(student);
+					courseDao.delete(course);
 					log.info("The student has been removed from the course");
 				} else {
 					log.info(UNSWER_MENU_INCORRECT_COURSE_CELECTION + SPACE_DELIMITER + UNSWER_MENU_TO_MAIN_MENU);

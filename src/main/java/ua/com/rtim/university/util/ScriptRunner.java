@@ -12,10 +12,12 @@ import java.sql.Statement;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.log4j.Logger;
+
 public class ScriptRunner {
 
 	private ConnectionManager connectionManager = new ConnectionManager();
-	private org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ScriptRunner.class);
+	private static Logger log = Logger.getLogger(ScriptRunner.class);
 
 	public void generateDatabaseData(String scriptName) {
 		try {
@@ -32,7 +34,7 @@ public class ScriptRunner {
 				log.info("Tables will created!");
 			}
 		} catch (IOException | SQLException e) {
-			log.error("Can't generate tabels", e);
+			throw new ConnectionManagerException(e);
 		}
 	}
 }

@@ -24,6 +24,5 @@ CREATE TABLE courses (
 CREATE TABLE students_courses(
     student_id INTEGER REFERENCES students(student_id) ON DELETE CASCADE ON UPDATE CASCADE,
     course_id INTEGER REFERENCES courses(course_id) ON DELETE CASCADE ON UPDATE CASCADE,
-    PRIMARY KEY (student_id, course_id),
     UNIQUE (student_id, course_id)
 );

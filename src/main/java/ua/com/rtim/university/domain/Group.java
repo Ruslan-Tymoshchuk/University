@@ -6,6 +6,7 @@ public class Group {
 
 	private int id;
 	private String name;
+	private int amount;
 
 	public int getId() {
 		return id;
@@ -23,9 +24,17 @@ public class Group {
 		this.name = name;
 	}
 
+	public int getAmount() {
+		return amount;
+	}
+
+	public void setAmount(int amount) {
+		this.amount = amount;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, name);
+		return Objects.hash(amount, id, name);
 	}
 
 	@Override
@@ -37,6 +46,6 @@ public class Group {
 		if (getClass() != obj.getClass())
 			return false;
 		Group other = (Group) obj;
-		return id == other.id && Objects.equals(name, other.name);
+		return amount == other.amount && id == other.id && Objects.equals(name, other.name);
 	}
 }

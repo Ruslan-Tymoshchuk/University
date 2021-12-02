@@ -26,7 +26,7 @@ public class ConnectionManager {
 				properties.load(propertyFile);
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			throw new ConnectionManagerException(e);
 		}
 		this.url = properties.getProperty("db.conn.url");
 		this.userName = properties.getProperty("db.username");

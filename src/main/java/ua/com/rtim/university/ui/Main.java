@@ -4,6 +4,8 @@ import static java.lang.System.lineSeparator;
 
 import java.util.Scanner;
 
+import org.apache.log4j.Logger;
+
 import ua.com.rtim.university.util.DataGenerator;
 import ua.com.rtim.university.util.DataGeneratorDao;
 import ua.com.rtim.university.util.ScriptRunner;
@@ -18,7 +20,7 @@ public class Main {
 	public static final String UNSWER_MENU_ADD_A_STUDENT_TO_THE_COURSE = "e. Add a student to the course (from a list)";
 	public static final String UNSWER_MENU_REMOVE_FROM_COURSE = "f. Remove the student from one of his or her courses";
 	public static final String UNSWER_MENU_YOUR_CHOICE = "Your choice: ";
-	private static org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Main.class);
+	private static Logger log = Logger.getLogger(Main.class);
 
 	public static void main(String[] args) {
 		log.info(DIALOGUE_MENU + lineSeparator() + UNSWER_MENU_FIND_ALL_GROUPS_BY_STUDENT_COUNT + lineSeparator()
@@ -26,7 +28,7 @@ public class Main {
 				+ lineSeparator() + UNSWER_MENU_DELETE_STUDENT_BY_ID + lineSeparator()
 				+ UNSWER_MENU_ADD_A_STUDENT_TO_THE_COURSE + lineSeparator() + UNSWER_MENU_REMOVE_FROM_COURSE);
 		ScriptRunner scriptRunner = new ScriptRunner();
-		scriptRunner.generateDatabaseData("tables.sql");
+		scriptRunner.generateDatabaseData("schema.sql");
 		DataGeneratorDao dataGeneratordao = new DataGenerator().generateRandomData();
 		dataGeneratordao.insertRandomData();
 		Scanner scanner = new Scanner(System.in);

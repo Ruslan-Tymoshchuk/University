@@ -1,5 +1,6 @@
 package ua.com.rtim.university.domain;
 
+import java.util.List;
 import java.util.Objects;
 
 public class Course {
@@ -7,6 +8,8 @@ public class Course {
 	private int id;
 	private String name;
 	private String description;
+	private Student student;
+	private List<Student> students;
 
 	public int getId() {
 		return id;
@@ -32,9 +35,25 @@ public class Course {
 		this.description = description;
 	}
 
+	public Student getStudent() {
+		return student;
+	}
+
+	public void setStudent(Student student) {
+		this.student = student;
+	}
+
+	public List<Student> getStudents() {
+		return students;
+	}
+
+	public void setStudents(List<Student> students) {
+		this.students = students;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, name, description);
+		return Objects.hash(description, id, name, student);
 	}
 
 	@Override
@@ -46,6 +65,7 @@ public class Course {
 		if (getClass() != obj.getClass())
 			return false;
 		Course other = (Course) obj;
-		return id == other.id && Objects.equals(name, other.name) && Objects.equals(description, other.description);
+		return Objects.equals(description, other.description) && id == other.id && Objects.equals(name, other.name)
+				&& Objects.equals(student, other.student);
 	}
 }

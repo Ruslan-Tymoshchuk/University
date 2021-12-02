@@ -8,33 +8,36 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import ua.com.rtim.university.domain.Group;
 import ua.com.rtim.university.util.ConnectionManager;
 
 public class GroupDao implements CrudRepository<Group> {
 
-	public static final String GET_ALL_GROUPS_QUERY = "SELECT * FROM groups";
 	public static final String ADD_NEW_GROUP_QUERY = "INSERT INTO groups (group_name) VALUES (?)";
 	public static final String GET_GROUP_BY_ID_QUERY = "SELECT * FROM groups WHERE group_id = ?";
 	public static final String UPDATE_GROUP_BY_ID_QUERY = "UPDATE groups SET group_name = ? WHERE group_id = ?";
 	public static final String DELETE_GROUP_BY_ID_QUERY = "DELETE FROM groups WHERE group_id = ?";
+	public static final String GET_GROUPS_BY_STUDENTS_AMOUNT_QUERY = "SELECT st.group_id, gr.group_name, "
+			+ "COUNT(student_id) AS students_amount FROM students st "
+			+ "LEFT JOIN groups gr ON gr.group_id = st.group_id GROUP BY st.group_id, gr.group_name ORDER by st.group_id";
 	private ConnectionManager connectionManager = new ConnectionManager();
-	private org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GroupDao.class);
+	private static Logger log = Logger.getLogger(GroupDao.class);
 
 	@Override
 	public List<Group> findAll() throws DaoException {
 		List<Group> groups = new ArrayList<>();
 		try (Connection connection = connectionManager.getConnection();
 				Statement statement = connection.createStatement();
-				ResultSet result = statement.executeQuery(GET_ALL_GROUPS_QUERY)) {
-			while (result.next()) {
-				Group group = new Group();
-				group.setId(result.getInt("group_id"));
-				group.setName(result.getString("group_name"));
+				ResultSet resultSet = statement.executeQuery(GET_GROUPS_BY_STUDENTS_AMOUNT_QUERY)) {
+			while (resultSet.next()) {
+				Group group = mapToGroup(resultSet);
+				resultSet.getInt("students_amount");
+				group.setAmount(resultSet.getInt("students_amount"));
 				groups.add(group);
 			}
 		} catch (SQLException e) {
-			log.error("Couldn't find all groups", e);
 			throw new DaoException("Couldn't find all groups", e);
 		}
 		return groups;
@@ -47,13 +50,12 @@ public class GroupDao implements CrudRepository<Group> {
 						Statement.RETURN_GENERATED_KEYS)) {
 			statement.setString(1, group.getName());
 			statement.execute();
-			try (ResultSet result = statement.getGeneratedKeys()) {
-				if (result.next()) {
-					group.setId(result.getInt(1));
+			try (ResultSet resultSet = statement.getGeneratedKeys()) {
+				if (resultSet.next()) {
+					group.setId(resultSet.getInt(1));
 				}
 			}
 		} catch (SQLException e) {
-			log.error("Failed to create a group", e);
 			throw new DaoException("Failed to create a group", e);
 		}
 	}
@@ -64,14 +66,12 @@ public class GroupDao implements CrudRepository<Group> {
 		try (Connection connection = connectionManager.getConnection();
 				PreparedStatement statement = connection.prepareStatement(GET_GROUP_BY_ID_QUERY)) {
 			statement.setInt(1, groupId);
-			try (ResultSet result = statement.executeQuery()) {
-				if (result.next()) {
-					group.setId((result.getInt("group_id")));
-					group.setName(result.getString("group_name"));
+			try (ResultSet resultSet = statement.executeQuery()) {
+				if (resultSet.next()) {
+					group = mapToGroup(resultSet);
 				}
 			}
 		} catch (SQLException e) {
-			log.error("group whith id-" + groupId + " not found", e);
 			throw new DaoException("group whith id-" + groupId + " not found", e);
 		}
 		return group;
@@ -86,7 +86,6 @@ public class GroupDao implements CrudRepository<Group> {
 			statement.executeUpdate();
 			log.info("Ok, group has been update");
 		} catch (SQLException e) {
-			log.error("Update error", e);
 			throw new DaoException("Update error", e);
 		}
 	}
@@ -99,8 +98,18 @@ public class GroupDao implements CrudRepository<Group> {
 			statement.execute();
 			log.info("Ok, group has been deleted");
 		} catch (SQLException e) {
-			log.error("Deletion error", e);
 			throw new DaoException("Deletion error", e);
 		}
+	}
+
+	public Group mapToGroup(ResultSet resultSet) throws DaoException {
+		Group group = new Group();
+		try {
+			group.setId(resultSet.getInt("group_id"));
+			group.setName(resultSet.getString("group_name"));
+		} catch (SQLException e) {
+			throw new DaoException("Failed map to course", e);
+		}
+		return group;
 	}
 }

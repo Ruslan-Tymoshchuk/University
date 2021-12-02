@@ -21,7 +21,7 @@ class GroupDaoTest extends DaoTest {
 	void findAll_shouldBeGetAllEntities_fromTheDataBase() throws Exception {
 		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
 		try {
-			scriptRunner.generateDatabaseData("tables.sql");
+			scriptRunner.generateDatabaseData("schema.sql");
 			IDataSet dataSet = getDataSet("actualdata.xml");
 			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
 			List<Group> groups = groupDao.findAll();
@@ -40,7 +40,7 @@ class GroupDaoTest extends DaoTest {
 	void create_shouldBeAddNewEntity_intoTheDataBase() throws Exception {
 		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
 		try {
-			scriptRunner.generateDatabaseData("tables.sql");
+			scriptRunner.generateDatabaseData("schema.sql");
 			IDataSet dataSet = getDataSet("actualdata.xml");
 			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
 			Group group = new Group();
@@ -61,7 +61,7 @@ class GroupDaoTest extends DaoTest {
 	void update_shouldBeUpdateEntity_inTheDataBase() throws Exception {
 		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
 		try {
-			scriptRunner.generateDatabaseData("tables.sql");
+			scriptRunner.generateDatabaseData("schema.sql");
 			IDataSet dataSet = getDataSet("actualdata.xml");
 			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
 			Group group = groupDao.getById(3);
@@ -81,7 +81,7 @@ class GroupDaoTest extends DaoTest {
 	void delete_shouldBeRemoveEntity_fromTheDataBase() throws Exception {
 		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
 		try {
-			scriptRunner.generateDatabaseData("tables.sql");
+			scriptRunner.generateDatabaseData("schema.sql");
 			IDataSet dataSet = getDataSet("actualdata.xml");
 			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
 			groupDao.delete(groupDao.getById(3));
@@ -99,7 +99,7 @@ class GroupDaoTest extends DaoTest {
 	void givenNull_whenCreateGroup_thenException() throws Exception {
 		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
 		try {
-			scriptRunner.generateDatabaseData("tables.sql");
+			scriptRunner.generateDatabaseData("schema.sql");
 			IDataSet dataSet = getDataSet("actualdata.xml");
 			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
 			assertThrows(NullPointerException.class, () -> groupDao.create(null));
@@ -117,7 +117,7 @@ class GroupDaoTest extends DaoTest {
 	void givenNull_whenUpdateGroup_thenException() throws Exception {
 		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
 		try {
-			scriptRunner.generateDatabaseData("tables.sql");
+			scriptRunner.generateDatabaseData("schema.sql");
 			IDataSet dataSet = getDataSet("actualdata.xml");
 			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
 			assertThrows(NullPointerException.class, () -> groupDao.update(null));
@@ -135,7 +135,7 @@ class GroupDaoTest extends DaoTest {
 	void givenNull_whenDeleteGroup_thenException() throws Exception {
 		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
 		try {
-			scriptRunner.generateDatabaseData("tables.sql");
+			scriptRunner.generateDatabaseData("schema.sql");
 			IDataSet dataSet = getDataSet("actualdata.xml");
 			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
 			assertThrows(NullPointerException.class, () -> groupDao.delete(null));
