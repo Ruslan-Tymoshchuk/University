@@ -15,25 +15,31 @@ import ua.com.rtim.university.util.ConnectionManager;
 
 public class GroupDao implements CrudRepository<Group> {
 
-	public static final String ADD_NEW_GROUP_QUERY = "INSERT INTO groups (group_name) VALUES (?)";
-	public static final String GET_GROUP_BY_ID_QUERY = "SELECT * FROM groups WHERE group_id = ?";
-	public static final String UPDATE_GROUP_BY_ID_QUERY = "UPDATE groups SET group_name = ? WHERE group_id = ?";
-	public static final String DELETE_GROUP_BY_ID_QUERY = "DELETE FROM groups WHERE group_id = ?";
-	public static final String GET_GROUPS_BY_STUDENTS_AMOUNT_QUERY = "SELECT st.group_id, gr.group_name, "
+	private static Logger log = Logger.getLogger(GroupDao.class);
+	public static final String GET_ALL_GROUPS_QUERY = "SELECT st.group_id, gr.group_name, "
 			+ "COUNT(student_id) AS students_amount FROM students st "
 			+ "LEFT JOIN groups gr ON gr.group_id = st.group_id GROUP BY st.group_id, gr.group_name ORDER by st.group_id";
-	private ConnectionManager connectionManager = new ConnectionManager();
-	private static Logger log = Logger.getLogger(GroupDao.class);
+	public static final String ADD_NEW_GROUP_QUERY = "INSERT INTO groups (group_name) VALUES (?)";
+	public static final String GET_GROUP_QUERY = "SELECT st.group_id, gr.group_name, "
+			+ "COUNT(student_id) AS students_amount FROM students st "
+			+ "LEFT JOIN groups gr ON gr.group_id = st.group_id WHERE gr.group_id = ? "
+			+ "GROUP BY st.group_id, gr.group_name ORDER by st.group_id";
+	public static final String UPDATE_GROUP_QUERY = "UPDATE groups SET group_name = ? WHERE group_id = ?";
+	public static final String DELETE_GROUP_QUERY = "DELETE FROM groups WHERE group_id = ?";
+	private final ConnectionManager connectionManager;
+
+	public GroupDao(ConnectionManager connectionManager) {
+		this.connectionManager = connectionManager;
+	}
 
 	@Override
 	public List<Group> findAll() throws DaoException {
 		List<Group> groups = new ArrayList<>();
 		try (Connection connection = connectionManager.getConnection();
 				Statement statement = connection.createStatement();
-				ResultSet resultSet = statement.executeQuery(GET_GROUPS_BY_STUDENTS_AMOUNT_QUERY)) {
+				ResultSet resultSet = statement.executeQuery(GET_ALL_GROUPS_QUERY)) {
 			while (resultSet.next()) {
 				Group group = mapToGroup(resultSet);
-				resultSet.getInt("students_amount");
 				group.setAmount(resultSet.getInt("students_amount"));
 				groups.add(group);
 			}
@@ -64,11 +70,12 @@ public class GroupDao implements CrudRepository<Group> {
 	public Group getById(int groupId) throws DaoException {
 		Group group = new Group();
 		try (Connection connection = connectionManager.getConnection();
-				PreparedStatement statement = connection.prepareStatement(GET_GROUP_BY_ID_QUERY)) {
+				PreparedStatement statement = connection.prepareStatement(GET_GROUP_QUERY)) {
 			statement.setInt(1, groupId);
 			try (ResultSet resultSet = statement.executeQuery()) {
 				if (resultSet.next()) {
 					group = mapToGroup(resultSet);
+					group.setAmount(resultSet.getInt("students_amount"));
 				}
 			}
 		} catch (SQLException e) {
@@ -80,7 +87,7 @@ public class GroupDao implements CrudRepository<Group> {
 	@Override
 	public void update(Group group) throws DaoException {
 		try (Connection connection = connectionManager.getConnection();
-				PreparedStatement statement = connection.prepareStatement(UPDATE_GROUP_BY_ID_QUERY)) {
+				PreparedStatement statement = connection.prepareStatement(UPDATE_GROUP_QUERY)) {
 			statement.setString(1, group.getName());
 			statement.setInt(2, group.getId());
 			statement.executeUpdate();
@@ -93,7 +100,7 @@ public class GroupDao implements CrudRepository<Group> {
 	@Override
 	public void delete(Group group) throws DaoException {
 		try (Connection connection = connectionManager.getConnection();
-				PreparedStatement statement = connection.prepareStatement(DELETE_GROUP_BY_ID_QUERY)) {
+				PreparedStatement statement = connection.prepareStatement(DELETE_GROUP_QUERY)) {
 			statement.setInt(1, group.getId());
 			statement.execute();
 			log.info("Ok, group has been deleted");
@@ -102,14 +109,10 @@ public class GroupDao implements CrudRepository<Group> {
 		}
 	}
 
-	public Group mapToGroup(ResultSet resultSet) throws DaoException {
+	public Group mapToGroup(ResultSet resultSet) throws SQLException {
 		Group group = new Group();
-		try {
-			group.setId(resultSet.getInt("group_id"));
-			group.setName(resultSet.getString("group_name"));
-		} catch (SQLException e) {
-			throw new DaoException("Failed map to course", e);
-		}
+		group.setId(resultSet.getInt("group_id"));
+		group.setName(resultSet.getString("group_name"));
 		return group;
 	}
 }

@@ -6,17 +6,15 @@ import java.util.Scanner;
 
 import org.apache.log4j.Logger;
 
-import ua.com.rtim.university.dao.CourseDao;
 import ua.com.rtim.university.dao.CrudRepository;
 import ua.com.rtim.university.dao.DaoException;
-import ua.com.rtim.university.dao.GroupDao;
-import ua.com.rtim.university.dao.StudentDao;
 import ua.com.rtim.university.domain.Course;
 import ua.com.rtim.university.domain.Group;
 import ua.com.rtim.university.domain.Student;
 
 public class Menu implements UserMenu {
 
+	private static Logger log = Logger.getLogger(Menu.class);
 	public static final String UNSWER_MENU_ENTER_THE_NUMBER = "Enter the number!";
 	public static final String SPACE_DELIMITER = " ";
 	public static final String UNSWER_MENU_TO_MAIN_MENU = "Going to the main menu!";
@@ -33,10 +31,15 @@ public class Menu implements UserMenu {
 	public static final String STUDENT_FORMAT = "Student: ID_%d %s %s";
 	public static final String GROUP_FORMAT = "Group: ID_%d %s";
 	public static final String COURSE_FORMAT = "Course: ID_%d %s";
-	private CrudRepository<Course> courseDao = new CourseDao();
-	private CrudRepository<Student> studentDao = new StudentDao();
-	private CrudRepository<Group> groupDao = new GroupDao();
-	private static Logger log = Logger.getLogger(Menu.class);
+	private final CrudRepository<Group> groupDao;
+	private final CrudRepository<Course> courseDao;
+	private final CrudRepository<Student> studentDao;
+
+	public Menu(CrudRepository<Group> groupDao, CrudRepository<Course> courseDao, CrudRepository<Student> studentDao) {
+		this.groupDao = groupDao;
+		this.courseDao = courseDao;
+		this.studentDao = studentDao;
+	}
 
 	@Override
 	public void findAllGroupsByStudentsAmount(Scanner scanner) {
@@ -44,7 +47,7 @@ public class Menu implements UserMenu {
 			log.info(UNSWER_MENU_ENTER_THE_NUMBER);
 			List<Group> groups = groupDao.findAll();
 			int amount = scanner.nextInt();
-			groups.stream().filter(group -> group.getAmount() >= amount).forEach(group -> log.info(group.getName()));
+			groups.stream().filter(group -> group.getAmount() <= amount).forEach(group -> log.info(group.getName()));
 		} catch (InputMismatchException | DaoException e) {
 			log.error(UNSWER_MENU_ENTER_THE_NUMBER + SPACE_DELIMITER + UNSWER_MENU_TO_MAIN_MENU, e);
 		}
@@ -118,10 +121,12 @@ public class Menu implements UserMenu {
 			if (student.getId() > 0) {
 				log.info(String.format(STUDENT_FORMAT, student.getId(), student.getFirstName(), student.getLastName()));
 				log.info(UNSWER_MENU_ENTER_COURSE_ID);
-				Course course = courseDao.getById(scanner.nextInt());
-				if (course.getId() > 0 && !student.getCourses().contains(course)) {
+				int id = scanner.nextInt();
+				Course course = courses.stream().filter(s -> s.getId() == id).findFirst()
+						.orElseThrow(InputMismatchException::new);
+				if (!student.getCourses().contains(course)) {
 					course.setStudent(student);
-					courseDao.update(course);
+					courseDao.create(course);
 					log.info("Ok, the student has been added to the course");
 				} else {
 					log.info(UNSWER_MENU_INCORRECT_COURSE_CELECTION + SPACE_DELIMITER + UNSWER_MENU_TO_MAIN_MENU);

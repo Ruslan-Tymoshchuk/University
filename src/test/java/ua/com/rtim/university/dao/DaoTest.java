@@ -10,9 +10,9 @@ public class DaoTest {
 
 	protected ConnectionManager connectionManager = new ConnectionManager();
 	protected ScriptRunner scriptRunner = new ScriptRunner();
-	protected StudentDao studentDao = new StudentDao();
-	protected CourseDao courseDao = new CourseDao();
-	protected GroupDao groupDao = new GroupDao();
+	protected GroupDao groupDao = new GroupDao(connectionManager);
+	protected StudentDao studentDao = new StudentDao(connectionManager, groupDao);
+	protected CourseDao courseDao = new CourseDao(connectionManager, studentDao);
 
 	protected IDataSet getDataSet(String datasetName) throws Exception {
 		return new FlatXmlDataSetBuilder().build(getClass().getClassLoader().getResourceAsStream(datasetName));

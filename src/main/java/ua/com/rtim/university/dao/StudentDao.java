@@ -18,24 +18,28 @@ import ua.com.rtim.university.util.ConnectionManager;
 
 public class StudentDao implements CrudRepository<Student> {
 
+	private static Logger log = Logger.getLogger(StudentDao.class);
 	public static final String GET_ALL_STUDENTS_QUERY = "SELECT st.student_id, st.group_id, gr.group_name, st.first_name, st.last_name "
 			+ "FROM students st LEFT JOIN groups gr ON gr.group_id = st.group_id";
 	public static final String ADD_NEW_STUDENT_QUERY = "INSERT INTO students (group_id, first_name, last_name) VALUES (?,?,?)";
+	public static final String ADD_TO_COURSE_QUERY = "INSERT INTO students_courses (student_id, course_id) values(?, ?)";
 	public static final String GET_STUDENT_BY_ID_QUERY = "SELECT st.student_id, st.group_id, gr.group_name, st.first_name, st.last_name "
 			+ "FROM students st LEFT JOIN groups gr ON gr.group_id = st.group_id WHERE student_id = ?";
 	public static final String UPDATE_STUDENT_QUERY = "UPDATE students SET group_id = ?, first_name = ?, last_name = ? WHERE student_id = ?";
 	public static final String DELETE_STUDENT_BY_ID_QUERY = "DELETE FROM students WHERE student_id = ?";
-	public static final String GET_BY_COURSE_QUERY = "SELECT s.* "
-			+ "FROM students_courses sc LEFT JOIN students s on s.student_id = sc.student_id "
-			+ "LEFT JOIN courses c on c.course_id = sc.course_id WHERE course_name = ?";
-	public static final String ADD_TO_COURSE_QUERY = "INSERT INTO students_courses (student_id, course_id) values(?, ?)";
-	public static final String REMOVE_FROM_COURSE_BY_ID_QUERY = "DELETE FROM students_courses WHERE student_id = ? AND course_id = ?";
-	public static final String FIND_STUDENTS_BY_COUSE_QUERY = "SELECT st.student_id, gr.*, st.first_name, st.last_name FROM courses c "
-			+ "LEFT JOIN students_courses sc ON sc.course_id = c.course_id "
+	public static final String FIND_STUDENTS_BY_COUSE_QUERY = "SELECT st.student_id, st.group_id, gr.group_name, "
+			+ "st.first_name, st.last_name FROM courses c LEFT JOIN students_courses sc ON sc.course_id = c.course_id "
 			+ "LEFT JOIN students st ON st.student_id = sc.student_id "
 			+ "LEFT JOIN groups gr ON gr.group_id = st.group_id WHERE c.course_id = ?";
-	private ConnectionManager connectionManager = new ConnectionManager();
-	private static Logger log = Logger.getLogger(StudentDao.class);
+	private final ConnectionManager connectionManager;
+	private final GroupDao groupDao;
+	private final CourseDao courseDao;
+
+	public StudentDao(ConnectionManager connectionManager, GroupDao groupDao) {
+		this.connectionManager = connectionManager;
+		this.groupDao = groupDao;
+		this.courseDao = new CourseDao(connectionManager, StudentDao.this);
+	}
 
 	@Override
 	public List<Student> findAll() throws DaoException {
@@ -44,7 +48,10 @@ public class StudentDao implements CrudRepository<Student> {
 				Statement statement = connection.createStatement()) {
 			try (ResultSet resultSet = statement.executeQuery(GET_ALL_STUDENTS_QUERY)) {
 				while (resultSet.next()) {
-					students.add(mapToStudent(resultSet));
+					Student student = mapToStudent(resultSet);
+					Set<Course> courses = courseDao.findCoursesByStudent(student);
+					courses.forEach(student::setCourse);
+					students.add(student);
 				}
 			}
 			log.info("The search was successful");
@@ -67,17 +74,27 @@ public class StudentDao implements CrudRepository<Student> {
 				if (result.next()) {
 					student.setId(result.getInt(1));
 					student.getCourses().forEach(course -> {
-						course.setStudent(student);
 						try {
-							new CourseDao().update(course);
+							addToCourse(student, course);
 						} catch (DaoException e) {
-							e.printStackTrace();
+							log.error(e);
 						}
 					});
 				}
 			}
 		} catch (SQLException e) {
 			throw new DaoException("Failed to create a student", e);
+		}
+	}
+
+	public void addToCourse(Student student, Course course) throws DaoException {
+		try (Connection connection = connectionManager.getConnection();
+				PreparedStatement statement = connection.prepareStatement(ADD_TO_COURSE_QUERY)) {
+			statement.setInt(1, student.getId());
+			statement.setInt(2, course.getId());
+			statement.executeUpdate();
+		} catch (SQLException e) {
+			throw new DaoException("Error adding a student to a group", e);
 		}
 	}
 
@@ -90,6 +107,8 @@ public class StudentDao implements CrudRepository<Student> {
 			try (ResultSet resultSet = statement.executeQuery()) {
 				if (resultSet.next()) {
 					student = mapToStudent(resultSet);
+					Set<Course> courses = courseDao.findCoursesByStudent(student);
+					courses.forEach(student::setCourse);
 				}
 			}
 		} catch (SQLException e) {
@@ -106,14 +125,6 @@ public class StudentDao implements CrudRepository<Student> {
 			statement.setString(2, student.getFirstName());
 			statement.setString(3, student.getLastName());
 			statement.setInt(4, student.getId());
-			student.getCourses().forEach(course -> {
-				course.setStudent(student);
-				try {
-					new CourseDao().update(course);
-				} catch (DaoException e) {
-					e.printStackTrace();
-				}
-			});
 			statement.executeUpdate();
 			log.info("Ok, student has been update");
 		} catch (SQLException e) {
@@ -133,7 +144,7 @@ public class StudentDao implements CrudRepository<Student> {
 		}
 	}
 
-	public List<Student> findAllStudentsByCourseName(Course course) throws DaoException {
+	public List<Student> findAllStudentsByCourse(Course course) throws DaoException {
 		List<Student> students = new ArrayList<>();
 		try (Connection connection = connectionManager.getConnection();
 				PreparedStatement statement = connection.prepareStatement(FIND_STUDENTS_BY_COUSE_QUERY)) {
@@ -141,7 +152,9 @@ public class StudentDao implements CrudRepository<Student> {
 			statement.execute();
 			try (ResultSet resultSet = statement.executeQuery()) {
 				while (resultSet.next()) {
-					students.add(mapToStudent(resultSet));
+					Student student = mapToStudent(resultSet);
+					student.setCourse(course);
+					students.add(student);
 				}
 			}
 		} catch (SQLException e) {
@@ -150,19 +163,13 @@ public class StudentDao implements CrudRepository<Student> {
 		return students;
 	}
 
-	public Student mapToStudent(ResultSet resultSet) throws DaoException {
+	public Student mapToStudent(ResultSet resultSet) throws SQLException {
 		Student student = new Student();
-		try {
-			student.setId(resultSet.getInt("student_id"));
-			Group group = new GroupDao().mapToGroup(resultSet);
-			student.setGroup(group);
-			student.setFirstName(resultSet.getString("first_name"));
-			student.setLastName(resultSet.getString("last_name"));
-			Set<Course> courses = new CourseDao().findCoursesByStudent(student);
-			courses.forEach(student::setCourse);
-		} catch (SQLException e) {
-			throw new DaoException("Failed map to student", e);
-		}
+		student.setId(resultSet.getInt("student_id"));
+		Group group = groupDao.mapToGroup(resultSet);
+		student.setGroup(group);
+		student.setFirstName(resultSet.getString("first_name"));
+		student.setLastName(resultSet.getString("last_name"));
 		return student;
 	}
 }

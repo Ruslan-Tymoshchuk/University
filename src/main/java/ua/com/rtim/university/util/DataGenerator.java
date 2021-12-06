@@ -10,20 +10,31 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import ua.com.rtim.university.dao.CrudRepository;
 import ua.com.rtim.university.domain.Course;
 import ua.com.rtim.university.domain.Group;
 import ua.com.rtim.university.domain.Student;
 
 public class DataGenerator {
 
-	public DataGeneratorDao generateRandomData() {
+	public static final String SPACE_DELIMITER = " ";
+	public static final String COURSES_NAMES = "HYSTORY ENGLISH FRENCH BUSINESS PHILOSOPHY SOCIOLOGY "
+			+ "CHEMISTRY PHYSICS MATHEMATICS ANTHROPOLOGY";
+	public static final String FIRST_NAMES = "Molly Emily Katie Madeline Claire Emma Abigail Kiara "
+			+ "Jasmine Carly Dustin Logan Dylan Hunter Marquis Darnell Willie Dominique Darius Xavier";
+	public static final String LAST_NAMES = "Smith Johnson Williams Brown Jones Garcia Miller Davis Rodriguez "
+			+ "Martinez Hernandez Lopez Gonzalez Wilson Anderson Thomas Taylor Moore Jackson Martin";
+
+	public DataGeneratorDao generateRandomData(CrudRepository<Group> groupDaoRepository,
+			CrudRepository<Course> courseDaoRepository, CrudRepository<Student> studentDaoRepository) {
 		List<Group> groups = getGeneratedGroups(10);
 		List<Course> courses = getGeneratedCourses();
 		List<Student> students = getGeneratedStudents(200);
 		students.forEach(student -> student.setGroup(groups.get(current().nextInt(groups.size()))));
 		students = assignStudentsToGroups(students, 10, 30);
 		bindCourses(students, courses);
-		return new DataGeneratorDao(students, courses, groups);
+		return new DataGeneratorDao(groups, groupDaoRepository, courses, courseDaoRepository, students,
+				studentDaoRepository);
 	}
 
 	private List<Group> getGeneratedGroups(int amount) {
@@ -39,24 +50,20 @@ public class DataGenerator {
 	}
 
 	private List<Course> getGeneratedCourses() {
-		List<String> coursesNames = Arrays.asList("HYSTORY", "ENGLISH", "FRENCH", "BUSINESS", "PHILOSOPHY", "SOCIOLOGY",
-				"CHEMISTRY", "PHYSICS", "MATHEMATICS", "ANTHROPOLOGY");
+		List<String> coursesNames = Arrays.asList(COURSES_NAMES.split(SPACE_DELIMITER));
 		List<Course> courses = new ArrayList<>();
 		IntStream.range(0, coursesNames.size()).forEach(s -> {
 			Course course = new Course();
 			course.setName(coursesNames.get(s));
+			course.setDescription("The best science");
 			courses.add(course);
 		});
 		return courses;
 	}
 
 	private List<Student> getGeneratedStudents(int amount) {
-		List<String> firstNames = Arrays.asList("Molly", "Emily", "Katie", "Madeline", "Claire", "Emma", "Abigail",
-				"Kiara", "Jasmine", "Carly", "Dustin", "Logan", "Dylan", "Hunter", "Marquis", "Darnell", "Willie",
-				"Dominique", "Darius", "Xavier");
-		List<String> lastNames = Arrays.asList("Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller",
-				"Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas",
-				"Taylor", "Moore", "Jackson", "Martin");
+		List<String> firstNames = Arrays.asList(FIRST_NAMES.split(SPACE_DELIMITER));
+		List<String> lastNames = Arrays.asList(LAST_NAMES.split(SPACE_DELIMITER));
 		List<Student> students = new ArrayList<>();
 		IntStream.range(0, amount).forEach(s -> {
 			Student student = new Student();
@@ -84,7 +91,6 @@ public class DataGenerator {
 		allStudents.forEach(student -> {
 			IntStream.range(0, current().nextInt(1, 4)).forEach(s -> {
 				Course course = courses.get(current().nextInt(courses.size()));
-				course.setStudent(student);
 				student.setCourse(course);
 			});
 			students.add(student);

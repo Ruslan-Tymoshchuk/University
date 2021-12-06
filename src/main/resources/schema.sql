@@ -18,7 +18,7 @@ CREATE TABLE students (
 CREATE TABLE courses (   
     course_id SERIAL PRIMARY KEY,
     course_name VARCHAR NOT NULL,
-    course_description VARCHAR DEFAULT 'The best science'
+    course_description VARCHAR
 );
 
 CREATE TABLE students_courses(

@@ -4,40 +4,27 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import ua.com.rtim.university.dao.CourseDao;
 import ua.com.rtim.university.dao.CrudRepository;
 import ua.com.rtim.university.dao.DaoException;
-import ua.com.rtim.university.dao.GroupDao;
-import ua.com.rtim.university.dao.StudentDao;
 import ua.com.rtim.university.domain.Course;
 import ua.com.rtim.university.domain.Group;
 import ua.com.rtim.university.domain.Student;
 
 public class DataGeneratorDao {
 
-	public static final String ERROR_MESSAGE = "Failed to create test data";
-	private final List<Student> students;
-	private final List<Course> courses;
-	private final List<Group> groups;
 	private static Logger log = Logger.getLogger(DataGeneratorDao.class);
+	public static final String ERROR_MESSAGE = "Failed to create test data";
 
-	public DataGeneratorDao(List<Student> students, List<Course> courses, List<Group> groups) {
-		this.students = students;
-		this.courses = courses;
-		this.groups = groups;
-	}
-
-	public void insertRandomData() {
-		CrudRepository<Group> groupDao = new GroupDao();
-		CrudRepository<Course> courseDao = new CourseDao();
-		CrudRepository<Student> studentDao = new StudentDao();
-		insertGroups(groupDao);
-		insertCourses(courseDao);
-		insertStudents(studentDao);
+	public DataGeneratorDao(List<Group> groups, CrudRepository<Group> groupDaoRepository, List<Course> courses,
+			CrudRepository<Course> courseDaoRepository, List<Student> students,
+			CrudRepository<Student> studentDaoRepository) {
+		insertGroups(groups, groupDaoRepository);
+		insertCourses(courses, courseDaoRepository);
+		insertStudents(students, studentDaoRepository);
 		log.info("Data generated and successfully added to the database!");
 	}
 
-	private void insertGroups(CrudRepository<Group> groupDao) {
+	private void insertGroups(List<Group> groups, CrudRepository<Group> groupDao) {
 		groups.forEach(group -> {
 			try {
 				groupDao.create(group);
@@ -47,7 +34,7 @@ public class DataGeneratorDao {
 		});
 	}
 
-	private void insertCourses(CrudRepository<Course> courseDao) {
+	private void insertCourses(List<Course> courses, CrudRepository<Course> courseDao) {
 		courses.forEach(course -> {
 			try {
 				courseDao.create(course);
@@ -57,7 +44,7 @@ public class DataGeneratorDao {
 		});
 	}
 
-	private void insertStudents(CrudRepository<Student> studentDao) {
+	private void insertStudents(List<Student> students, CrudRepository<Student> studentDao) {
 		students.forEach(student -> {
 			try {
 				studentDao.create(student);

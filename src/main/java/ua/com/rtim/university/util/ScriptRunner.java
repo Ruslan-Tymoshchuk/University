@@ -16,10 +16,9 @@ import org.apache.log4j.Logger;
 
 public class ScriptRunner {
 
-	private ConnectionManager connectionManager = new ConnectionManager();
 	private static Logger log = Logger.getLogger(ScriptRunner.class);
 
-	public void generateDatabaseData(String scriptName) {
+	public void generateDatabaseData(ConnectionManager connectionManager, String scriptName) {
 		try {
 			URL fileUrl = getClass().getClassLoader().getResource(scriptName);
 			if (fileUrl == null) {
