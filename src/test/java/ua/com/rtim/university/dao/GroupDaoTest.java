@@ -64,7 +64,7 @@ class GroupDaoTest extends DaoTest {
 			scriptRunner.generateDatabaseData(connectionManager, "schema.sql");
 			IDataSet dataSet = getDataSet("actualdata.xml");
 			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
-			Group group = groupDao.getById(3);
+			Group group = groupDao.getById(3).get();
 			group.setName("HH-55");
 			groupDao.update(group);
 			ITable expectedTable = getDataSet("expected-update.xml").getTable("GROUPS");
@@ -84,12 +84,31 @@ class GroupDaoTest extends DaoTest {
 			scriptRunner.generateDatabaseData(connectionManager, "schema.sql");
 			IDataSet dataSet = getDataSet("actualdata.xml");
 			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
-			groupDao.delete(groupDao.getById(3));
+			groupDao.delete(groupDao.getById(3).get());
 			ITable expectedTable = getDataSet("expected-delete.xml").getTable("GROUPS");
 			IDataSet databaseDataSet = connection.createDataSet();
 			ITable actualTable = databaseDataSet.getTable("GROUPS");
 			connection.close();
 			Assertion.assertEquals(expectedTable, actualTable);
+		} finally {
+			connection.close();
+		}
+	}
+
+	@Test
+	void shouldBeGet_GroupsByStudentAmount_fromTheDataBase() throws Exception {
+		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
+		try {
+			scriptRunner.generateDatabaseData(connectionManager, "schema.sql");
+			IDataSet dataSet = getDataSet("actualdata.xml");
+			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+			List<Group> groupsByStudentAmount = groupDao.findGroupsByStudentsAmount(1);
+			IDataSet databaseDataSet = connection.createDataSet();
+			ITable actualTable = databaseDataSet.getTable("GROUPS");
+			connection.close();
+			ITable expectedTable = getDataSet("actualdata.xml").getTable("GROUPS");
+			Assertion.assertEquals(expectedTable, actualTable);
+			assertEquals(expectedTable.getRowCount(), groupsByStudentAmount.size());
 		} finally {
 			connection.close();
 		}

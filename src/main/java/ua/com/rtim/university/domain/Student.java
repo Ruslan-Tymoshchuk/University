@@ -48,8 +48,8 @@ public class Student {
 		return courses;
 	}
 
-	public void setCourse(Course course) {
-		this.courses.add(course);
+	public void setCourses(Set<Course> courses) {
+		this.courses = courses;
 	}
 
 	@Override

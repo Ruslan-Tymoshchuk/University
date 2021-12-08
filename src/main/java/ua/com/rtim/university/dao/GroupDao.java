@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.log4j.Logger;
 
@@ -16,16 +17,16 @@ import ua.com.rtim.university.util.ConnectionManager;
 public class GroupDao implements CrudRepository<Group> {
 
 	private static Logger log = Logger.getLogger(GroupDao.class);
-	public static final String GET_ALL_GROUPS_QUERY = "SELECT st.group_id, gr.group_name, "
-			+ "COUNT(student_id) AS students_amount FROM students st "
-			+ "LEFT JOIN groups gr ON gr.group_id = st.group_id GROUP BY st.group_id, gr.group_name ORDER by st.group_id";
+
+	public static final String GET_ALL_GROUPS_QUERY = "SELECT * FROM groups";
+	public static final String GET_ALL_GROUPS_BY_STUDENTS_AMOUNT_QUERY = "SELECT gr.*, COUNT(st.student_id) AS students_amount "
+			+ "FROM groups gr LEFT JOIN students st ON st.group_id = gr.group_id "
+			+ "GROUP BY gr.group_id HAVING COUNT(student_id) <= ? ORDER BY gr.group_id";
 	public static final String ADD_NEW_GROUP_QUERY = "INSERT INTO groups (group_name) VALUES (?)";
-	public static final String GET_GROUP_QUERY = "SELECT st.group_id, gr.group_name, "
-			+ "COUNT(student_id) AS students_amount FROM students st "
-			+ "LEFT JOIN groups gr ON gr.group_id = st.group_id WHERE gr.group_id = ? "
-			+ "GROUP BY st.group_id, gr.group_name ORDER by st.group_id";
+	public static final String GET_GROUP_QUERY = "SELECT * FROM groups WHERE group_id = ?";
 	public static final String UPDATE_GROUP_QUERY = "UPDATE groups SET group_name = ? WHERE group_id = ?";
 	public static final String DELETE_GROUP_QUERY = "DELETE FROM groups WHERE group_id = ?";
+
 	private final ConnectionManager connectionManager;
 
 	public GroupDao(ConnectionManager connectionManager) {
@@ -34,19 +35,17 @@ public class GroupDao implements CrudRepository<Group> {
 
 	@Override
 	public List<Group> findAll() throws DaoException {
-		List<Group> groups = new ArrayList<>();
 		try (Connection connection = connectionManager.getConnection();
 				Statement statement = connection.createStatement();
 				ResultSet resultSet = statement.executeQuery(GET_ALL_GROUPS_QUERY)) {
+			List<Group> groups = new ArrayList<>();
 			while (resultSet.next()) {
-				Group group = mapToGroup(resultSet);
-				group.setAmount(resultSet.getInt("students_amount"));
-				groups.add(group);
+				groups.add(mapToGroup(resultSet));
 			}
+			return groups;
 		} catch (SQLException e) {
 			throw new DaoException("Couldn't find all groups", e);
 		}
-		return groups;
 	}
 
 	@Override
@@ -67,21 +66,20 @@ public class GroupDao implements CrudRepository<Group> {
 	}
 
 	@Override
-	public Group getById(int groupId) throws DaoException {
-		Group group = new Group();
+	public Optional<Group> getById(int groupId) throws DaoException {
 		try (Connection connection = connectionManager.getConnection();
 				PreparedStatement statement = connection.prepareStatement(GET_GROUP_QUERY)) {
 			statement.setInt(1, groupId);
 			try (ResultSet resultSet = statement.executeQuery()) {
+				Optional<Group> group = Optional.empty();
 				if (resultSet.next()) {
-					group = mapToGroup(resultSet);
-					group.setAmount(resultSet.getInt("students_amount"));
+					group = Optional.of(mapToGroup(resultSet));
 				}
+				return group;
 			}
 		} catch (SQLException e) {
 			throw new DaoException("group whith id-" + groupId + " not found", e);
 		}
-		return group;
 	}
 
 	@Override
@@ -106,6 +104,23 @@ public class GroupDao implements CrudRepository<Group> {
 			log.info("Ok, group has been deleted");
 		} catch (SQLException e) {
 			throw new DaoException("Deletion error", e);
+		}
+	}
+
+	public List<Group> findGroupsByStudentsAmount(int amount) throws DaoException {
+		try (Connection connection = connectionManager.getConnection();
+				PreparedStatement statement = connection.prepareStatement(GET_ALL_GROUPS_BY_STUDENTS_AMOUNT_QUERY)) {
+			statement.setInt(1, amount);
+			try (ResultSet resultSet = statement.executeQuery()) {
+				List<Group> groups = new ArrayList<>();
+				while (resultSet.next()) {
+					groups.add(mapToGroup(resultSet));
+				}
+				log.info("The groups were found");
+				return groups;
+			}
+		} catch (SQLException e) {
+			throw new DaoException("Error in finding groups", e);
 		}
 	}
 

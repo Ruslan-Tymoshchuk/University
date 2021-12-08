@@ -1,6 +1,7 @@
 package ua.com.rtim.university.dao;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface CrudRepository<T> {
 
@@ -8,7 +9,7 @@ public interface CrudRepository<T> {
 
 	void create(T entity) throws DaoException;
 
-	T getById(int id) throws DaoException;
+	Optional<T> getById(int id) throws DaoException;
 
 	void update(T entity) throws DaoException;
 

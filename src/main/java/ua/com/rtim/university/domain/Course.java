@@ -8,7 +8,6 @@ public class Course {
 	private int id;
 	private String name;
 	private String description;
-	private Student student;
 	private List<Student> students;
 
 	public int getId() {
@@ -35,14 +34,6 @@ public class Course {
 		this.description = description;
 	}
 
-	public Student getStudent() {
-		return student;
-	}
-
-	public void setStudent(Student student) {
-		this.student = student;
-	}
-
 	public List<Student> getStudents() {
 		return students;
 	}
@@ -53,7 +44,7 @@ public class Course {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(description, id, name, student);
+		return Objects.hash(description, id, name);
 	}
 
 	@Override
@@ -65,7 +56,6 @@ public class Course {
 		if (getClass() != obj.getClass())
 			return false;
 		Course other = (Course) obj;
-		return Objects.equals(description, other.description) && id == other.id && Objects.equals(name, other.name)
-				&& Objects.equals(student, other.student);
+		return Objects.equals(description, other.description) && id == other.id && Objects.equals(name, other.name);
 	}
 }

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
+import java.util.Set;
 
 import org.dbunit.Assertion;
 import org.dbunit.database.DatabaseConnection;
@@ -14,7 +15,6 @@ import org.dbunit.operation.DatabaseOperation;
 import org.junit.jupiter.api.Test;
 
 import ua.com.rtim.university.domain.Course;
-import ua.com.rtim.university.domain.Student;
 
 class CourseDaoTest extends DaoTest {
 
@@ -60,20 +60,38 @@ class CourseDaoTest extends DaoTest {
 	}
 
 	@Test
-	void shouldBeAdd_studentToCourse_inTheDataBase() throws Exception {
+	void update_shouldBeUpdateEntity_inTheDataBase() throws Exception {
 		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
 		try {
 			scriptRunner.generateDatabaseData(connectionManager, "schema.sql");
 			IDataSet dataSet = getDataSet("actualdata.xml");
 			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
-			Student student = studentDao.getById(1);
-			Course course = courseDao.getById(2);
-			course.setStudent(student);
-			courseDao.create(course);
+			Course course = courseDao.getById(3).get();
+			course.setName("TestName");
+			course.setDescription("TestDescription");
+			courseDao.update(course);
+			ITable expectedTable = getDataSet("expected-update.xml").getTable("COURSES");
 			IDataSet databaseDataSet = connection.createDataSet();
-			ITable actualTable = databaseDataSet.getTable("STUDENTS_COURSES");
+			ITable actualTable = databaseDataSet.getTable("COURSES");
 			connection.close();
-			ITable expectedTable = getDataSet("expected-update.xml").getTable("STUDENTS_COURSES");
+			Assertion.assertEquals(expectedTable, actualTable);
+		} finally {
+			connection.close();
+		}
+	}
+
+	@Test
+	void delete_shouldBeRemoveEntity_fromTheDataBase() throws Exception {
+		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
+		try {
+			scriptRunner.generateDatabaseData(connectionManager, "schema.sql");
+			IDataSet dataSet = getDataSet("actualdata.xml");
+			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+			courseDao.delete(courseDao.getById(3).get());
+			ITable expectedTable = getDataSet("expected-delete.xml").getTable("COURSES");
+			IDataSet databaseDataSet = connection.createDataSet();
+			ITable actualTable = databaseDataSet.getTable("COURSES");
+			connection.close();
 			Assertion.assertEquals(expectedTable, actualTable);
 		} finally {
 			connection.close();
@@ -87,15 +105,31 @@ class CourseDaoTest extends DaoTest {
 			scriptRunner.generateDatabaseData(connectionManager, "schema.sql");
 			IDataSet dataSet = getDataSet("actualdata.xml");
 			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
-			Student student = studentDao.getById(1);
-			Course course = courseDao.getById(1);
-			course.setStudent(student);
-			courseDao.delete(course);
+			courseDao.removeFromCourse(1, 1);
 			IDataSet databaseDataSet = connection.createDataSet();
 			ITable actualTable = databaseDataSet.getTable("STUDENTS_COURSES");
 			connection.close();
 			ITable expectedTable = getDataSet("expected-delete.xml").getTable("STUDENTS_COURSES");
 			Assertion.assertEquals(expectedTable, actualTable);
+		} finally {
+			connection.close();
+		}
+	}
+
+	@Test
+	void shouldBeGet_AllCoursesByStudent_fromTheDataBase() throws Exception {
+		IDatabaseConnection connection = new DatabaseConnection(connectionManager.getConnection(), "public");
+		try {
+			scriptRunner.generateDatabaseData(connectionManager, "schema.sql");
+			IDataSet dataSet = getDataSet("actualdata.xml");
+			DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+			Set<Course> studentsByCourseName = courseDao.findCoursesByStudent(1);
+			IDataSet databaseDataSet = connection.createDataSet();
+			ITable actualTable = databaseDataSet.getTable("COURSES");
+			connection.close();
+			ITable expectedTable = getDataSet("actualdata.xml").getTable("COURSES");
+			Assertion.assertEquals(expectedTable, actualTable);
+			assertEquals(expectedTable.getRowCount(), studentsByCourseName.size());
 		} finally {
 			connection.close();
 		}

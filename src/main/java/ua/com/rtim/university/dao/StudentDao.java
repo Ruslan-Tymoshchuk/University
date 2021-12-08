@@ -7,11 +7,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.Optional;
 
 import org.apache.log4j.Logger;
 
-import ua.com.rtim.university.domain.Course;
 import ua.com.rtim.university.domain.Group;
 import ua.com.rtim.university.domain.Student;
 import ua.com.rtim.university.util.ConnectionManager;
@@ -19,6 +18,7 @@ import ua.com.rtim.university.util.ConnectionManager;
 public class StudentDao implements CrudRepository<Student> {
 
 	private static Logger log = Logger.getLogger(StudentDao.class);
+
 	public static final String GET_ALL_STUDENTS_QUERY = "SELECT st.student_id, st.group_id, gr.group_name, st.first_name, st.last_name "
 			+ "FROM students st LEFT JOIN groups gr ON gr.group_id = st.group_id";
 	public static final String ADD_NEW_STUDENT_QUERY = "INSERT INTO students (group_id, first_name, last_name) VALUES (?,?,?)";
@@ -31,34 +31,30 @@ public class StudentDao implements CrudRepository<Student> {
 			+ "st.first_name, st.last_name FROM courses c LEFT JOIN students_courses sc ON sc.course_id = c.course_id "
 			+ "LEFT JOIN students st ON st.student_id = sc.student_id "
 			+ "LEFT JOIN groups gr ON gr.group_id = st.group_id WHERE c.course_id = ?";
+
 	private final ConnectionManager connectionManager;
 	private final GroupDao groupDao;
-	private final CourseDao courseDao;
 
 	public StudentDao(ConnectionManager connectionManager, GroupDao groupDao) {
 		this.connectionManager = connectionManager;
 		this.groupDao = groupDao;
-		this.courseDao = new CourseDao(connectionManager, StudentDao.this);
 	}
 
 	@Override
 	public List<Student> findAll() throws DaoException {
-		List<Student> students = new ArrayList<>();
 		try (Connection connection = connectionManager.getConnection();
 				Statement statement = connection.createStatement()) {
 			try (ResultSet resultSet = statement.executeQuery(GET_ALL_STUDENTS_QUERY)) {
+				List<Student> students = new ArrayList<>();
 				while (resultSet.next()) {
-					Student student = mapToStudent(resultSet);
-					Set<Course> courses = courseDao.findCoursesByStudent(student);
-					courses.forEach(student::setCourse);
-					students.add(student);
+					students.add(mapToStudent(resultSet));
 				}
+				log.info("The search was successful");
+				return students;
 			}
-			log.info("The search was successful");
 		} catch (SQLException e) {
 			throw new DaoException("Couldn't find all students", e);
 		}
-		return students;
 	}
 
 	@Override
@@ -72,10 +68,11 @@ public class StudentDao implements CrudRepository<Student> {
 			statement.execute();
 			try (ResultSet result = statement.getGeneratedKeys()) {
 				if (result.next()) {
-					student.setId(result.getInt(1));
+					int studentId = result.getInt(1);
+					student.setId(studentId);
 					student.getCourses().forEach(course -> {
 						try {
-							addToCourse(student, course);
+							addToCourse(studentId, course.getId());
 						} catch (DaoException e) {
 							log.error(e);
 						}
@@ -87,34 +84,21 @@ public class StudentDao implements CrudRepository<Student> {
 		}
 	}
 
-	public void addToCourse(Student student, Course course) throws DaoException {
-		try (Connection connection = connectionManager.getConnection();
-				PreparedStatement statement = connection.prepareStatement(ADD_TO_COURSE_QUERY)) {
-			statement.setInt(1, student.getId());
-			statement.setInt(2, course.getId());
-			statement.executeUpdate();
-		} catch (SQLException e) {
-			throw new DaoException("Error adding a student to a group", e);
-		}
-	}
-
 	@Override
-	public Student getById(int studentId) throws DaoException {
-		Student student = new Student();
+	public Optional<Student> getById(int id) throws DaoException {
 		try (Connection connection = connectionManager.getConnection();
 				PreparedStatement statement = connection.prepareStatement(GET_STUDENT_BY_ID_QUERY)) {
-			statement.setInt(1, studentId);
+			statement.setInt(1, id);
 			try (ResultSet resultSet = statement.executeQuery()) {
+				Optional<Student> student = Optional.empty();
 				if (resultSet.next()) {
-					student = mapToStudent(resultSet);
-					Set<Course> courses = courseDao.findCoursesByStudent(student);
-					courses.forEach(student::setCourse);
+					student = Optional.of(mapToStudent(resultSet));
 				}
+				return student;
 			}
 		} catch (SQLException e) {
-			throw new DaoException("Student whith id-" + studentId + " not found", e);
+			throw new DaoException("Student whith id-" + id + " not found", e);
 		}
-		return student;
 	}
 
 	@Override
@@ -144,26 +128,35 @@ public class StudentDao implements CrudRepository<Student> {
 		}
 	}
 
-	public List<Student> findAllStudentsByCourse(Course course) throws DaoException {
-		List<Student> students = new ArrayList<>();
+	public void addToCourse(int studentId, int courseId) throws DaoException {
+		try (Connection connection = connectionManager.getConnection();
+				PreparedStatement statement = connection.prepareStatement(ADD_TO_COURSE_QUERY)) {
+			statement.setInt(1, studentId);
+			statement.setInt(2, courseId);
+			statement.executeUpdate();
+		} catch (SQLException e) {
+			throw new DaoException("Error adding a student to a group", e);
+		}
+	}
+
+	public List<Student> findAllStudentsByCourse(int id) throws DaoException {
 		try (Connection connection = connectionManager.getConnection();
 				PreparedStatement statement = connection.prepareStatement(FIND_STUDENTS_BY_COUSE_QUERY)) {
-			statement.setInt(1, course.getId());
+			statement.setInt(1, id);
 			statement.execute();
 			try (ResultSet resultSet = statement.executeQuery()) {
+				List<Student> students = new ArrayList<>();
 				while (resultSet.next()) {
-					Student student = mapToStudent(resultSet);
-					student.setCourse(course);
-					students.add(student);
+					students.add(mapToStudent(resultSet));
 				}
+				return students;
 			}
 		} catch (SQLException e) {
 			throw new DaoException("Error in finding courses", e);
 		}
-		return students;
 	}
 
-	public Student mapToStudent(ResultSet resultSet) throws SQLException {
+	public Student mapToStudent(ResultSet resultSet) throws SQLException, DaoException {
 		Student student = new Student();
 		student.setId(resultSet.getInt("student_id"));
 		Group group = groupDao.mapToGroup(resultSet);
