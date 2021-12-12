@@ -23,7 +23,7 @@ public class DataGenerator {
 	public static final String LAST_NAMES = "Smith Johnson Williams Brown Jones Garcia Miller Davis Rodriguez "
 			+ "Martinez Hernandez Lopez Gonzalez Wilson Anderson Thomas Taylor Moore Jackson Martin";
 
-	public List<Group> getGeneratedGroups(int amount) {
+	public List<Group> generateGroups(int amount) {
 		List<Group> groups = new ArrayList<>();
 		IntStream.range(0, amount).forEach(s -> {
 			String characters = randomAlphabetic(2).toUpperCase();
@@ -35,7 +35,7 @@ public class DataGenerator {
 		return groups;
 	}
 
-	public List<Course> getGeneratedCourses() {
+	public List<Course> generateCourses() {
 		List<String> coursesNames = Arrays.asList(COURSES_NAMES.split(SPACE_DELIMITER));
 		List<Course> courses = new ArrayList<>();
 		IntStream.range(0, coursesNames.size()).forEach(s -> {
@@ -47,12 +47,14 @@ public class DataGenerator {
 		return courses;
 	}
 
-	public List<Student> getGeneratedStudents(int amount) {
+	public List<Student> generateStudents(int amount) {
 		List<String> firstNames = Arrays.asList(FIRST_NAMES.split(SPACE_DELIMITER));
 		List<String> lastNames = Arrays.asList(LAST_NAMES.split(SPACE_DELIMITER));
 		List<Student> students = new ArrayList<>();
 		IntStream.range(0, amount).forEach(s -> {
 			Student student = new Student();
+			Group group = new Group();
+			student.setGroup(group);
 			String studentFirstName = firstNames.get(current().nextInt(firstNames.size()));
 			String studentLastName = lastNames.get(current().nextInt(lastNames.size()));
 			student.setFirstName(studentFirstName);

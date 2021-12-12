@@ -6,17 +6,17 @@ import java.util.Set;
 
 public class Student {
 
-	private int id;
+	private Integer id;
 	private Group group;
 	private String firstName;
 	private String lastName;
 	private Set<Course> courses = new HashSet<>();
 
-	public int getId() {
+	public Integer getId() {
 		return id;
 	}
 
-	public void setId(int id) {
+	public void setId(Integer id) {
 		this.id = id;
 	}
 

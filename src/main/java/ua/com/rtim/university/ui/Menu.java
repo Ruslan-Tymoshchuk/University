@@ -1,5 +1,6 @@
 package ua.com.rtim.university.ui;
 
+import java.util.HashSet;
 import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
@@ -27,10 +28,15 @@ public class Menu implements UserMenu {
 	public static final String UNSWER_MENU_FIRST_NAME = "Enter first name";
 	public static final String UNSWER_MENU_LAST_NAME = "Enter last name";
 	public static final String UNSWER_MENU_GROUP_FOR_STUDENT = "Select the group for a student. Enter Group ID";
+	public static final String UNSWER_MENU_HOW_MANY_COURSES = "How many courses select for the student?";
+	public static final String UNSWER_MENU_COURSES_SHOULD_NOY_BE_MORE = "The number of courses should not be more than ";
+	public static final String EXCLAMATION_POINT = "!";
+	public static final String UNSWER_MENU_NEED_TO_CHOOSE_AT_LEAST_ONE = "You need to choose at least one course!";
 	public static final String UNSWER_MENU_STUDENT_BEEN_ADDED = "Ok, student has been added";
-	public static final String UNSWER_MENU_INCORRECT_GROUP_CELECTION = "Incorrect group selection!";
 	public static final String UNSWER_MENU_ENTER_STUDENT_ID = "Enter student ID";
 	public static final String UNSWER_MENU_ENTER_COURSE_ID = "Enter course ID";
+	public static final String UNSWER_MENU_HAS_BEEN_ADDED_TO_THE_COURSE = "Ok, the student has been added to the course";
+	public static final String UNSWER_MENU_HAS_BEEN_REMOVED_FROM_THE_COURSE = "The student has been removed from the course";
 	public static final String UNSWER_MENU_INCORRECT_COURSE_CELECTION = "Incorrect course selection!";
 	public static final String STUDENT_FORMAT = "Student: ID_%d %s %s";
 	public static final String GROUP_FORMAT = "Group: ID_%d %s";
@@ -89,13 +95,32 @@ public class Menu implements UserMenu {
 		try {
 			List<Group> groups = groupDao.findAll();
 			groups.forEach(group -> System.out.println(String.format(GROUP_FORMAT, group.getId(), group.getName())));
-			int id = scanner.nextInt();
-			Group group = groupDao.getById(id).orElseThrow(InputMismatchException::new);
+			Group group = groupDao.getById(scanner.nextInt()).orElse(new Group());
 			student.setGroup(group);
-			studentDao.create(student);
-			System.out.println(UNSWER_MENU_STUDENT_BEEN_ADDED);
+			List<Course> courses = courseDao.findAll();
+			courses.forEach(course -> System.out
+					.println(String.format(COURSE_FORMAT, course.getId(), course.getName(), course.getDescription())));
+			System.out.println(UNSWER_MENU_HOW_MANY_COURSES);
+			int coursesAmount = scanner.nextInt();
+			Set<Course> studentCourses = new HashSet<>();
+			while (studentCourses.size() < coursesAmount) {
+				if (coursesAmount > courses.size()) {
+					throw new InputMismatchException(
+							UNSWER_MENU_COURSES_SHOULD_NOY_BE_MORE + courses.size() + EXCLAMATION_POINT);
+				}
+				System.out.println(UNSWER_MENU_COURSE_NAME);
+				Course course = courseDao.getById(scanner.nextInt()).orElseThrow(InputMismatchException::new);
+				studentCourses.add(course);
+			}
+			if (!studentCourses.isEmpty()) {
+				student.setCourses(studentCourses);
+				studentDao.create(student);
+				System.out.println(UNSWER_MENU_STUDENT_BEEN_ADDED);
+			} else {
+				throw new InputMismatchException(UNSWER_MENU_NEED_TO_CHOOSE_AT_LEAST_ONE);
+			}
 		} catch (InputMismatchException | DaoException e) {
-			log.error(UNSWER_MENU_INCORRECT_GROUP_CELECTION + SPACE_DELIMITER + UNSWER_MENU_TO_MAIN_MENU, e);
+			log.error(UNSWER_MENU_TO_MAIN_MENU, e);
 		}
 	}
 
@@ -132,7 +157,7 @@ public class Menu implements UserMenu {
 			Course course = courseDao.getById(courseId).orElseThrow(InputMismatchException::new);
 			if (!course.getStudents().contains(student)) {
 				studentDao.addToCourse(studentId, courseId);
-				System.out.println("Ok, the student has been added to the course");
+				System.out.println(UNSWER_MENU_HAS_BEEN_ADDED_TO_THE_COURSE);
 			} else {
 				System.out.println(UNSWER_MENU_INCORRECT_COURSE_CELECTION + SPACE_DELIMITER + UNSWER_MENU_TO_MAIN_MENU);
 			}
@@ -154,7 +179,7 @@ public class Menu implements UserMenu {
 			Course course = courseDao.getById(courseId).orElseThrow(InputMismatchException::new);
 			if (coursesByStudent.contains(course)) {
 				courseDao.removeFromCourse(studentId, course.getId());
-				System.out.println("The student has been removed from the course");
+				System.out.println(UNSWER_MENU_HAS_BEEN_REMOVED_FROM_THE_COURSE);
 			} else {
 				System.out.println(UNSWER_MENU_INCORRECT_COURSE_CELECTION + SPACE_DELIMITER + UNSWER_MENU_TO_MAIN_MENU);
 			}

@@ -5,12 +5,15 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
+import ua.com.rtim.university.domain.Course;
 import ua.com.rtim.university.domain.Group;
 import ua.com.rtim.university.domain.Student;
 import ua.com.rtim.university.util.ConnectionManager;
@@ -60,23 +63,25 @@ public class StudentDao implements CrudRepository<Student> {
 	@Override
 	public void create(Student student) throws DaoException {
 		try (Connection connection = connectionManager.getConnection();
-				PreparedStatement statement = connection.prepareStatement(ADD_NEW_STUDENT_QUERY,
-						Statement.RETURN_GENERATED_KEYS)) {
-			statement.setInt(1, student.getGroup().getId());
-			statement.setString(2, student.getFirstName());
-			statement.setString(3, student.getLastName());
-			statement.execute();
-			try (ResultSet result = statement.getGeneratedKeys()) {
-				if (result.next()) {
-					int studentId = result.getInt(1);
+				PreparedStatement createStudent = connection.prepareStatement(ADD_NEW_STUDENT_QUERY,
+						Statement.RETURN_GENERATED_KEYS);
+				PreparedStatement addToCourse = connection.prepareStatement(ADD_TO_COURSE_QUERY)) {
+			connection.setAutoCommit(false);
+			createStudent.setObject(1, student.getGroup().getId(), Types.INTEGER);
+			createStudent.setString(2, student.getFirstName());
+			createStudent.setString(3, student.getLastName());
+			createStudent.execute();
+			try (ResultSet resultSet = createStudent.getGeneratedKeys()) {
+				Set<Course> studentCourses = student.getCourses();
+				if (resultSet.next() && !studentCourses.isEmpty()) {
+					int studentId = resultSet.getInt(1);
 					student.setId(studentId);
-					student.getCourses().forEach(course -> {
-						try {
-							addToCourse(studentId, course.getId());
-						} catch (DaoException e) {
-							log.error(e);
-						}
-					});
+					for (Course course : studentCourses) {
+						addToCourse.setInt(1, studentId);
+						addToCourse.setInt(2, course.getId());
+						addToCourse.execute();
+					}
+					connection.commit();
 				}
 			}
 		} catch (SQLException e) {
@@ -135,7 +140,7 @@ public class StudentDao implements CrudRepository<Student> {
 			statement.setInt(2, courseId);
 			statement.executeUpdate();
 		} catch (SQLException e) {
-			throw new DaoException("Error adding a student to a group", e);
+			throw new DaoException("Error adding a student to a course", e);
 		}
 	}
 
@@ -156,7 +161,7 @@ public class StudentDao implements CrudRepository<Student> {
 		}
 	}
 
-	public Student mapToStudent(ResultSet resultSet) throws SQLException, DaoException {
+	public Student mapToStudent(ResultSet resultSet) throws SQLException {
 		Student student = new Student();
 		student.setId(resultSet.getInt("student_id"));
 		Group group = groupDao.mapToGroup(resultSet);

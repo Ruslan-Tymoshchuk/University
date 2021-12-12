@@ -13,5 +13,6 @@
     <STUDENTS_COURSES student_id ='1' course_id ='2'/>
     <STUDENTS_COURSES student_id ='1' course_id ='3'/>
     <STUDENTS_COURSES student_id ='2' course_id ='1'/>
+    <STUDENTS_COURSES student_id ='2' course_id ='2'/>
     <STUDENTS_COURSES student_id ='3' course_id ='1'/>
 </dataset>

@@ -1,12 +1,10 @@
 package ua.com.rtim.university.util;
 
 import static java.util.concurrent.ThreadLocalRandom.current;
+import static java.util.stream.Collectors.groupingBy;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.IntStream;
 
@@ -37,21 +35,17 @@ public class DataGeneratorDao {
 	}
 
 	public void insertGroups(List<Group> groups, List<Student> students, int minGroupSize, int maxGroupSize) {
-		Map<Group, List<Student>> groupsStudents = new HashMap<>();
-		students.forEach(student -> {
-			Group group = groups.get(current().nextInt(groups.size()));
-			groupsStudents.computeIfAbsent(group, s -> new ArrayList<>()).add(student);
-		});
-		groupsStudents.forEach((group, studentsList) -> {
-			try {
-				groupDao.create(group);
-				if (studentsList.size() >= minGroupSize && studentsList.size() <= maxGroupSize) {
-					studentsList.forEach(student -> student.setGroup(group));
-				}
-			} catch (DaoException e) {
-				log.error(ERROR_MESSAGE, e);
-			}
-		});
+		students.stream().collect(groupingBy(student -> groups.get(current().nextInt(groups.size()))))
+				.forEach((group, studentsList) -> {
+					try {
+						groupDao.create(group);
+						if (studentsList.size() >= minGroupSize && studentsList.size() <= maxGroupSize) {
+							studentsList.forEach(student -> student.setGroup(group));
+						}
+					} catch (DaoException e) {
+						log.error(ERROR_MESSAGE, e);
+					}
+				});
 	}
 
 	public void insertCourses(List<Course> courses) {
@@ -66,18 +60,16 @@ public class DataGeneratorDao {
 
 	public void insertStudents(List<Student> allStudents, List<Course> courses) {
 		allStudents.forEach(student -> {
-			if (student.getGroup() != null) {
-				try {
-					Set<Course> studentCourses = new HashSet<>();
-					IntStream.range(0, current().nextInt(1, 4)).forEach(s -> {
-						Course course = courses.get(current().nextInt(courses.size()));
-						studentCourses.add(course);
-					});
-					student.setCourses(studentCourses);
-					studentDao.create(student);
-				} catch (DaoException e) {
-					log.error(ERROR_MESSAGE, e);
-				}
+			try {
+				Set<Course> studentCourses = new HashSet<>();
+				IntStream.range(0, current().nextInt(1, 4)).forEach(s -> {
+					Course course = courses.get(current().nextInt(courses.size()));
+					studentCourses.add(course);
+				});
+				student.setCourses(studentCourses);
+				studentDao.create(student);
+			} catch (DaoException e) {
+				log.error(ERROR_MESSAGE, e);
 			}
 		});
 	}

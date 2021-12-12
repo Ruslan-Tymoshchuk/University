@@ -2,11 +2,12 @@
 <dataset>
     <GROUPS group_id='1' group_name='HJ-23'/>
     <GROUPS group_id='2' group_name='KM-15'/>
-    <students student_id ='1' group_id ='1' first_name = 'Emily' last_name = 'Moore'/>
-    <students student_id ='2' group_id ='2' first_name = 'Xavier' last_name = 'Davis'/>
+    <STUDENTS student_id ='1' group_id ='1' first_name = 'Emily' last_name = 'Moore'/>
+    <STUDENTS student_id ='2' group_id ='2' first_name = 'Xavier' last_name = 'Davis'/>
     <COURSES course_id='1' course_name='PHYSICS' course_description='The best science'/>
     <COURSES course_id='2' course_name='HYSTORY' course_description='The best science'/>
     <STUDENTS_COURSES student_id ='1' course_id ='2'/>
     <STUDENTS_COURSES student_id ='1' course_id ='3'/>
     <STUDENTS_COURSES student_id ='2' course_id ='1'/>
+    <STUDENTS_COURSES student_id ='3' course_id ='1'/>
 </dataset>

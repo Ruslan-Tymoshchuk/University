@@ -4,14 +4,14 @@ import java.util.Objects;
 
 public class Group {
 
-	private int id;
+	private Integer id;
 	private String name;
 
-	public int getId() {
+	public Integer getId() {
 		return id;
 	}
 
-	public void setId(int id) {
+	public void setId(Integer id) {
 		this.id = id;
 	}
 
@@ -37,6 +37,6 @@ public class Group {
 		if (getClass() != obj.getClass())
 			return false;
 		Group other = (Group) obj;
-		return id == other.id && Objects.equals(name, other.name);
+		return Objects.equals(id, other.id) && Objects.equals(name, other.name);
 	}
 }

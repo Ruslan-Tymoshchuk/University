@@ -36,9 +36,9 @@ public class Main {
 		ScriptRunner scriptRunner = new ScriptRunner();
 		scriptRunner.generateDatabaseData(connectionManager, "schema.sql");
 		DataGenerator dataGenerator = new DataGenerator();
-		List<Group> groups = dataGenerator.getGeneratedGroups(10);
-		List<Student> students = dataGenerator.getGeneratedStudents(200);
-		List<Course> courses = dataGenerator.getGeneratedCourses();
+		List<Group> groups = dataGenerator.generateGroups(10);
+		List<Student> students = dataGenerator.generateStudents(200);
+		List<Course> courses = dataGenerator.generateCourses();
 		GroupDao groupDao = new GroupDao(connectionManager);
 		CourseDao courseDao = new CourseDao(connectionManager,
 				new StudentDao(connectionManager, new GroupDao(connectionManager)));
