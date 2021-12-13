@@ -1,0 +1,3 @@
+CREATE USER rtim;
+CREATE DATABASE foxminded WITH OWNER = rtim;
+GRANT ALL PRIVILEGES ON DATABASE foxminded TO rtim;
